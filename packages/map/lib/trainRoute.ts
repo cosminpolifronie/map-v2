@@ -90,10 +90,53 @@ interface RailData {
 	 * Segments not in this map default to [[0, 0]] (all green).
 	 */
 	segmentColors: Record<string, [number, number][]>;
+	/**
+	 * Wiki line numbers actually traversed by each segment's path (same sorted
+	 * key), e.g. ["1"] → LK1. Includes incidental junction connectors onto
+	 * other lines — NOT used for grouping (see segmentDominant).
+	 */
+	segmentLines?: Record<string, string[]>;
+	/**
+	 * The single line each segment primarily belongs to (longest on-track
+	 * distance with a title-match preference), same sorted key. Used for the
+	 * playable-area hover tooltip.
+	 */
+	segmentDominant?: Record<string, string>;
+	/**
+	 * All lines sharing the segment's track (same sorted key), for
+	 * playable-area grouping: hovering a line highlights every segment whose
+	 * groupLines include it, so a segment shared by LK1+LK62+LK660 lights up
+	 * when any of those is hovered.
+	 */
+	segmentGroupLines?: Record<string, string[]>;
+	/**
+	 * Wiki metadata per line number (e.g. "1" → LK1), for the playable-area
+	 * hover tooltip: lkname is the line's colloquial name (only some lines),
+	 * title is the endpoint description, link is the wiki route page.
+	 */
+	lineInfo?: Record<string, LineInfo>;
 }
 
-/** Maps color codes (0, 1, 2) to color names ("green", "red", "grey"). */
-const COLOR_NAMES = ["green", "red", "grey"] as const;
+/** Per-line wiki metadata, keyed by line number (e.g. "1" → LK1). */
+export interface LineInfo {
+	lkname?: string;
+	title?: string;
+	link?: string;
+}
+
+/**
+ * Hex palette for ColoredSegment rendering, shared by every consumer
+ * (train route + playable area layers). The key order doubles as the
+ * color-code mapping: 0=green, 1=red, 2=grey.
+ */
+export const ROUTE_COLORS = {
+	green: "#2ecc71",
+	red: "#e74c3c",
+	grey: "#888888",
+} as const;
+
+/** Maps color codes (0, 1, 2) to color names, derived from ROUTE_COLORS. */
+const COLOR_NAMES = Object.keys(ROUTE_COLORS) as ColoredSegment["color"][];
 
 const railData = railDataJson as unknown as RailData;
 
@@ -362,4 +405,80 @@ async function computeRoute(train: {
 	}
 
 	return segments;
+}
+
+/**
+ * A colored piece of the whole-network overlay, plus the identity of the
+ * pre-computed segment it comes from (for hover tooltips).
+ */
+export interface PlayableAreaSegment extends ColoredSegment {
+	/** Sorted station-pair key ("a|b") of the pre-computed segment. */
+	key: string;
+	/** The line this segment primarily belongs to (dominant, for tooltip). */
+	line: string;
+	/** All lines sharing this segment's track (for grouping/highlighting). */
+	groupLines: string[];
+}
+
+/**
+ * Returns every pre-computed segment in railData.json split into green/red
+ * sub-segments, covering the whole mapped network instead of a single train's
+ * route. Powers the "Playable area" map layer. Grey (no-data) sub-segments
+ * are skipped — they are a per-route signal, not part of the network view.
+ * Boundaries are in key order and there is no travel direction to apply.
+ */
+export function getPlayableAreaSegments(): PlayableAreaSegment[] {
+	const segments: PlayableAreaSegment[] = [];
+	for (const [key, encoded] of Object.entries(railData.segments)) {
+		const allPts = decodePolyline(encoded);
+		const boundaries = railData.segmentColors?.[key] ?? [[0, 0]];
+		const line = railData.segmentDominant?.[key] ?? "";
+		const groupLines =
+			railData.segmentGroupLines?.[key] ?? (line ? [line] : []);
+		for (let bi = 0; bi < boundaries.length; bi++) {
+			const colorCode = boundaries[bi][1];
+			if (colorCode === 2) continue;
+			const startIdx = boundaries[bi][0];
+			const endIdx =
+				bi < boundaries.length - 1 ? boundaries[bi + 1][0] : allPts.length;
+			// Slice includes the next boundary's first point so consecutive
+			// sub-segments share the join coordinate (same contract as routes).
+			const points = allPts.slice(
+				startIdx,
+				bi < boundaries.length - 1 ? endIdx + 1 : endIdx,
+			);
+			if (points.length < 2) continue;
+			segments.push({
+				key,
+				line,
+				groupLines,
+				color: COLOR_NAMES[colorCode] ?? "grey",
+				points,
+			});
+		}
+	}
+
+	return segments;
+}
+
+/**
+ * Structured label data for one line, for the playable-area hover tooltip.
+ */
+export interface LineLabel {
+	line: string;
+	lkname?: string;
+	title?: string;
+}
+
+/**
+ * Returns wiki label data for every line in the given list (typically a
+ * segment's groupLines), in order. The caller renders each entry as a
+ * colored block — `LK<n> - <lkname>` (or just `LK<n>`) on one line, the
+ * endpoint title on the next — matching the SimRail wiki's route label.
+ */
+export function getLineLabels(lines: string[]): LineLabel[] {
+	return lines.map((line) => {
+		const info = railData.lineInfo?.[line];
+		return { line, lkname: info?.lkname, title: info?.title };
+	});
 }

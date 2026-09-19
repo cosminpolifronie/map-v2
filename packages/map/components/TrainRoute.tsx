@@ -3,13 +3,12 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { Polyline, Marker, useMap } from "react-leaflet";
 
 import { useSelectedTrain } from "../contexts/SelectedTrainContext";
-import { getTrainRoute, type ColoredSegment, type RoutePoint } from "../lib/trainRoute";
-
-const ROUTE_COLORS = {
-	green: "#2ecc71",
-	red: "#e74c3c",
-	grey: "#888888",
-} as const;
+import {
+	getTrainRoute,
+	type ColoredSegment,
+	type RoutePoint,
+	ROUTE_COLORS,
+} from "../lib/trainRoute";
 
 const ARROW_SPACING_KM = 3;
 

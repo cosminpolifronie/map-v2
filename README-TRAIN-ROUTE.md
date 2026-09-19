@@ -9,10 +9,27 @@ geometry, colored by drivability, with direction arrows along the line.
 
 Controls — one row of three checkboxes in the selected-train panel, persisted in
 `localStorage` via `SelectedTrainContext`:
-- *Follow* — pans the map to keep the selected train centered (`followTrain`, `Map.tsx`)
-- *Single* — hides every other train from the map while a train is selected
+
+- _Follow_ — pans the map to keep the selected train centered (`followTrain`, `Map.tsx`)
+- _Single_ — hides every other train from the map while a train is selected
   (`onlySelectedTrain`, filter in `TrainsList.tsx`)
-- *Route* — toggles the route layer (`showTrainRoute`, rendered by `TrainRoute.tsx`)
+- _Route_ — toggles the route layer (`showTrainRoute`, rendered by `TrainRoute.tsx`)
+
+The same green/red coloring is also available for the whole network at once via
+the _Playable area_ layer in the map's layers control (`PlayableArea.tsx`, fed by
+`getPlayableAreaSegments()` in `lib/trainRoute.ts`). It renders every computed
+segment from `railData.json` (no grey) and hides itself while a route is shown.
+Each segment is tagged with its dominant line (the one whose wiki title corridor
+contains the segment with the shortest corridor — most specific line wins, e.g.
+LK11 "Skierniewice–Łowicz Główny" over LK1 "Warszawa Zachodnia–Katowice" for a
+Bełchów–Płyćwia segment both contain) for the tooltip, and a set of group lines
+(the dominant line plus any line whose wiki title terminates at one of the
+segment's stations) for highlighting. Lines that merely share track are NOT
+grouped — e.g. LK1 and LK11 run together near Bełchów but hovering one does not
+highlight the other. Hovering a segment turns every segment whose group lines
+include that line blue and shows a tooltip with the wiki label, e.g.
+`LK1 - Wiedenka` / `Warszawa Zachodnia - Katowice` (from `lineInfo`). Clicking
+locks the selection; click the segment again or the map background to deselect.
 
 ## Big picture
 
@@ -38,20 +55,20 @@ train click → EDR timetable → resolve stops → polyline lookup/stitch → L
 
 ### Data sources
 
-| Source | Provides |
-|---|---|
-| `wiki.simrail.eu/map/main-files/map-data.json` | Index of 106 lines + 161 stations |
-| Route GeoJSONs (`/map/lk*.geojson`) | Per-line OSM track geometry. Lines can have two entries: drivable (`lk1.geojson`) and not-drivable (`lk1u.geojson`). Ways keep their OSM tags (`bridge`, `layer`, `tunnel`, …) |
-| Station GeoJSONs (`/map/stations/*.geojson`) | Station drawings — through tracks (open LineStrings), area outlines (closed loops), platform polygons, or points |
-| Timetables (`api1.aws.simrail.eu`, fallback: community EDR) | All trains' stop lists with line numbers (server `int1`) |
-| `components/stations.json`, `stationsRemote.json`, `stations-open` API | In-game coordinates for dispatch posts and small stops missing from the wiki |
-| `scripts/station-overrides.json` | Curated fixes; wins over every other source |
+| Source                                                                 | Provides                                                                                                                                                                       |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `wiki.simrail.eu/map/main-files/map-data.json`                         | Index of 106 lines + 161 stations                                                                                                                                              |
+| Route GeoJSONs (`/map/lk*.geojson`)                                    | Per-line OSM track geometry. Lines can have two entries: drivable (`lk1.geojson`) and not-drivable (`lk1u.geojson`). Ways keep their OSM tags (`bridge`, `layer`, `tunnel`, …) |
+| Station GeoJSONs (`/map/stations/*.geojson`)                           | Station drawings — through tracks (open LineStrings), area outlines (closed loops), platform polygons, or points                                                               |
+| Timetables (`api1.aws.simrail.eu`, fallback: community EDR)            | All trains' stop lists with line numbers (server `int1`)                                                                                                                       |
+| `components/stations.json`, `stationsRemote.json`, `stations-open` API | In-game coordinates for dispatch posts and small stops missing from the wiki                                                                                                   |
+| `scripts/station-overrides.json`                                       | Curated fixes; wins over every other source                                                                                                                                    |
 
 API responses are cached in `scripts/.cache/` (gitignored). Use `--refresh` to re-fetch.
 
 ### Step 1 — Station anchors
 
-Station coordinates are extracted as the station's *middle*, never the first vertex
+Station coordinates are extracted as the station's _middle_, never the first vertex
 (that sat at the station's throat and made routes visibly stop at its edge):
 
 - **Open LineStrings** (through tracks): arc-length midpoint of the longest one.
@@ -63,7 +80,7 @@ Station coordinates are extracted as the station's *middle*, never the first ver
 
 ### Step 2 — Segments from timetables
 
-A *segment* is a pair of consecutive **resolvable** stops (stops whose name matches a
+A _segment_ is a pair of consecutive **resolvable** stops (stops whose name matches a
 station with coordinates; fuzzy "contains" matching resolves name variants like
 "Warszawa Główna Towarowa" vs "…WOA"). Unresolvable intermediate stops are skipped and
 their neighbors connected directly — their line numbers are still recorded.
@@ -77,7 +94,7 @@ every train on that pair in both directions (used for A* line preference).
 
 Every station that participates in a segment is snapped **once** to a single graph node:
 
-1. Nearest node on any of its *served lines* (the lines of all its segments), on the
+1. Nearest node on any of its _served lines_ (the lines of all its segments), on the
    drivable-only graph;
 2. else the same search on the full graph (non-drivable stations, e.g. Jęzor on LK171);
 3. else the unrestricted nearest node.
@@ -106,6 +123,11 @@ including at junctions). Edges are of two kinds:
   track crossing on a bridge/tunnel arrives perpendicular to the line below and is
   rejected. Without this filter the pass creates phantom junctions at every crossing
   (this actually happened: LK25 over LK1 south of Koluszki produced a >90° zigzag).
+  The heading filter is **waived when the target node is within 100 m of a known
+  station coordinate** (passed to `buildGraphFromRoutes`): tracks converge at stations
+  from any angle (e.g. LK62 approaches Sosnowiec Południowy at 88° to LK660's track —
+  a real junction the 60° filter would reject, forcing A* onto a 2 km detour via
+  LK660's western loop).
 
 There is deliberately **no** all-pairs proximity mesh: the previous 15 m pass made up
 48% of all edges, meshed the ~5 m-spaced parallel tracks of double lines, and let A*
@@ -132,7 +154,7 @@ deduplicated, then are stored as Google Encoded Polylines (1e-5 precision ≈ 1.
 Hops routed on the full graph are classified per point against the wiki's available /
 not-available track geometry of the lines the path actually traversed (derived from the
 path's edges — more accurate than timetable hints, and the only source for hint-less
-freight hops). A point is **red** only if it is >50 m from any available track *and*
+freight hops). A point is **red** only if it is >50 m from any available track _and_
 <200 m from a not-available track; otherwise green. Results are stored as boundary
 indices (below).
 
@@ -156,7 +178,11 @@ Reports to review on every run:
                                  // the runtime trims routes to the first/last one
   "stations": { "name": [lat, lon] },  // normalized name → canonical on-track coordinate
   "segments": { "a|b": "…" },    // sorted key (a < b) → encoded polyline in KEY order
-  "segmentColors": { "a|b": [[startIndex, colorCode], …] }  // boundaries in KEY order
+  "segmentColors": { "a|b": [[startIndex, colorCode], …] },  // boundaries in KEY order
+  "segmentLines": { "a|b": ["1", …] },  // wiki line numbers traversed by the path (incl. junction connectors)
+  "segmentDominant": { "a|b": "1", … }, // the line the segment primarily belongs to (longest distance + title-match)
+  "segmentGroupLines": { "a|b": ["1", …] }, // all lines sharing the segment's track (for grouping)
+  "lineInfo": { "1": { "lkname": "Wiedenka", "title": "Warszawa Zachodnia - Katowice", "link": "…" }, … }
 }
 ```
 
@@ -164,7 +190,7 @@ Reports to review on every run:
 - A hop missing from `segments` renders as a grey straight line between the two
   canonical coordinates.
 - **Reversal contract**: polylines and boundary indices are in key order. When a train
-  travels `b → a`, the runtime reverses the decoded points *and* the sub-segment order
+  travels `b → a`, the runtime reverses the decoded points _and_ the sub-segment order
   (slicing by boundary indices happens in key order; the runtime's double-reverse
   handles direction — see git history for the bug this caused).
 
@@ -195,7 +221,7 @@ A hop renders grey when `segments` has no geometry for that stop pair. This is a
 deliberate fallback: the runtime still draws a straight line between the two stations'
 canonical coordinates, so the route stays continuous — "we know the train runs A→B,
 but there is no track geometry for it" — instead of silently vanishing. Note that only
-*resolvable* stops are drawn at all (off-map stops like Gdańsk are skipped, and the
+_resolvable_ stops are drawn at all (off-map stops like Gdańsk are skipped, and the
 route is trimmed to the first/last known station), so grey lines always run between
 real, validated station positions and meet green/red track wherever wiki coverage
 resumes — which is why a route can leave known track, cross unknown territory as grey,
@@ -212,7 +238,7 @@ Causes, most frequent first:
    (LK572), `sosnowiec maczki|jęzor`. These are wiki data gaps, not code bugs.
 3. **A dropped station stretches a hop.** If a station fails canonical snapping (bad
    source coordinates — e.g. Maków Podhalański), the runtime skips it and connects its
-   *neighbors* directly. That long neighbor-pair was never computed (no timetable runs
+   _neighbors_ directly. That long neighbor-pair was never computed (no timetable runs
    it as a single hop with usable lines), so it draws as one long grey chord. The
    generator's dropped-station report names the culprits.
 4. **Zero-length hops (invisible, cosmetic).** Small halts often share a canonical node
@@ -226,13 +252,13 @@ Grey cannot be "fixed" in runtime code — it is the no-data signal by design.
 
 ## Design decisions worth knowing
 
-| Decision | Why |
-|---|---|
-| One canonical node per station | Independent per-segment snapping disagreed at shared stations; the runtime bridged the mismatch with straight lines (498 junctions had ≥10 m bridges, worst 2.7 km across Kraków Płaszów). With canonical nodes: 0. |
-| Sorted-pair keys | Halves A* runs; out-and-back trains draw identical geometry; forces explicit direction handling (the reversal contract). |
-| Endpoint-only snapping + heading filter | Parallel tracks of double lines must not be cross-connected (the old 15 m all-pairs mesh did), and bridge/tunnel crossings must not become phantom junctions. |
-| No runtime heuristics | The old runtime had straight-line bridging, a >50 km grey guard, and an out-and-back dedup — all papering over generator data. All three removed; the generator now validates its own output instead. |
-| Timetable hints are soft (10×), guards are hard | Hints pick the right corridor when several exist; guards reject paths the wiki can't support. |
+| Decision                                        | Why                                                                                                                                                                                                                 |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| One canonical node per station                  | Independent per-segment snapping disagreed at shared stations; the runtime bridged the mismatch with straight lines (498 junctions had ≥10 m bridges, worst 2.7 km across Kraków Płaszów). With canonical nodes: 0. |
+| Sorted-pair keys                                | Halves A* runs; out-and-back trains draw identical geometry; forces explicit direction handling (the reversal contract).                                                                                            |
+| Endpoint-only snapping + heading filter         | Parallel tracks of double lines must not be cross-connected (the old 15 m all-pairs mesh did), and bridge/tunnel crossings must not become phantom junctions.                                                       |
+| No runtime heuristics                           | The old runtime had straight-line bridging, a >50 km grey guard, and an out-and-back dedup — all papering over generator data. All three removed; the generator now validates its own output instead.               |
+| Timetable hints are soft (10×), guards are hard | Hints pick the right corridor when several exist; guards reject paths the wiki can't support.                                                                                                                       |
 
 ## Running the generator
 
@@ -257,15 +283,16 @@ Current example: `maków podhalański` — its wiki geometry is drawn ~200 km of
 
 ## Key files
 
-| File | Purpose |
-|---|---|
-| `packages/map/scripts/generate-rail-data.mjs` | Generator (fetch → anchor → snap → A* → classify → railData.json) |
-| `packages/map/scripts/rail-helpers.mjs` | Graph builder (endpoint snap + heading filter), A* router, nearest-node finder, polyline codec |
-| `packages/map/scripts/station-overrides.json` | Curated station coordinate fixes |
-| `packages/map/components/railData.json` | Generated data (committed) |
-| `packages/map/lib/trainRoute.ts` | Runtime assembly (lookup, reversal, color split, merge, caching) |
-| `packages/map/components/TrainRoute.tsx` | Rendering (polylines + arrows), respects `showTrainRoute` |
-| `packages/map/contexts/SelectedTrainContext.tsx` | Selected train + persisted toggles |
+| File                                             | Purpose                                                                                        |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `packages/map/scripts/generate-rail-data.mjs`    | Generator (fetch → anchor → snap → A* → classify → railData.json)                              |
+| `packages/map/scripts/rail-helpers.mjs`          | Graph builder (endpoint snap + heading filter), A* router, nearest-node finder, polyline codec |
+| `packages/map/scripts/station-overrides.json`    | Curated station coordinate fixes                                                               |
+| `packages/map/components/railData.json`          | Generated data (committed)                                                                     |
+| `packages/map/lib/trainRoute.ts`                 | Runtime assembly (lookup, reversal, color split, merge, caching)                               |
+| `packages/map/components/TrainRoute.tsx`         | Rendering (polylines + arrows), respects `showTrainRoute`                                      |
+| `packages/map/components/PlayableArea.tsx`       | Whole-network green/red overlay (Playable area layer), hover → blue + line tooltip             |
+| `packages/map/contexts/SelectedTrainContext.tsx` | Selected train + persisted toggles                                                             |
 
 Tuning knobs (in the scripts): `SNAP_MAX_KM` (3 km), endpoint tolerance (500 m),
 `MAX_ALIGN_DEG` (60°), detour guard (2× + 5 km), foreign-line allowance (5 km),

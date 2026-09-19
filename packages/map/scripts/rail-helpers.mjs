@@ -184,9 +184,13 @@ export function decodePolyline(str) {
  *   - nodeLines: Array<Set<string>> — line number(s) touching each node
  *
  * @param {Array<{geometry: object, refs: string[]}>} routeFeatures - GeoJSON features
+ * @param {Array<[number, number]>} [stationCoords] - Optional station coordinates;
+ *   when provided, endpoint-snaps to nodes within 100m of a station skip the
+ *   heading filter (tracks converge at stations from any angle, unlike
+ *   bridge/tunnel crossings which the heading filter is designed to reject).
  * @returns {object} Graph in CSR format
  */
-export function buildGraphFromRoutes(routeFeatures) {
+export function buildGraphFromRoutes(routeFeatures, stationCoords) {
 	// Deduplicate coordinates: many LineStrings share the same physical points
 	// (e.g. at junctions). We use a Map keyed by "lat,lon" (6 decimal places)
 	// to assign each unique coordinate a node index.
@@ -219,7 +223,11 @@ export function buildGraphFromRoutes(routeFeatures) {
 	// equirectangular approximation (accurate enough at these distances).
 	const bearingDeg = (a, b) => {
 		const cosLat = Math.cos((((a[0] + b[0]) / 2) * Math.PI) / 180);
-		return ((Math.atan2((b[1] - a[1]) * cosLat, b[0] - a[0]) * 180) / Math.PI + 360) % 360;
+		return (
+			((Math.atan2((b[1] - a[1]) * cosLat, b[0] - a[0]) * 180) / Math.PI +
+				360) %
+			360
+		);
 	};
 	const angleDiffDeg = (a, b) => {
 		const d = Math.abs(a - b) % 360;
@@ -361,8 +369,45 @@ export function buildGraphFromRoutes(routeFeatures) {
 		const jsNeighbors = neighbors.get(j);
 		if (!jsNeighbors || jsNeighbors.length === 0) return false;
 		for (const k of jsNeighbors) {
-			if (angleDiffDeg(bearingIJ, bearingDeg(coords[j], coords[k])) <= MAX_ALIGN_DEG) {
+			if (
+				angleDiffDeg(bearingIJ, bearingDeg(coords[j], coords[k])) <=
+				MAX_ALIGN_DEG
+			) {
 				return true;
+			}
+		}
+		return false;
+	};
+
+	// Station proximity grid: nodes within 100m of a known station coordinate
+	// get the heading filter waived during endpoint-snapping (tracks converge
+	// at stations from any angle — e.g. LK62 approaches Sosnowiec Południowy
+	// at 88° to LK660's track, a real junction the 60° filter would reject).
+	const STATION_SNAP_KM = 0.1;
+	const stationGrid = new Map();
+	if (stationCoords) {
+		for (const [lat, lon] of stationCoords) {
+			const key = `${Math.floor(lat / epGridSize)},${Math.floor(lon / epGridSize)}`;
+			let cell = stationGrid.get(key);
+			if (!cell) {
+				cell = [];
+				stationGrid.set(key, cell);
+			}
+			cell.push([lat, lon]);
+		}
+	}
+	const isNearStation = (coord) => {
+		if (stationGrid.size === 0) return false;
+		const [lat, lon] = coord;
+		const cx = Math.floor(lat / epGridSize);
+		const cy = Math.floor(lon / epGridSize);
+		for (let dx = -1; dx <= 1; dx++) {
+			for (let dy = -1; dy <= 1; dy++) {
+				const cell = stationGrid.get(`${cx + dx},${cy + dy}`);
+				if (!cell) continue;
+				for (const [sLat, sLon] of cell) {
+					if (haversineKm(coord, [sLat, sLon]) <= STATION_SNAP_KM) return true;
+				}
 			}
 		}
 		return false;
@@ -389,10 +434,13 @@ export function buildGraphFromRoutes(routeFeatures) {
 		}
 		candidates.sort((a, b) => a.d - b.d);
 		// Connect to the nearest candidate that is a plausible continuation.
+		// When the candidate node is near a known station, skip the heading
+		// check — tracks converge at stations from any angle.
 		let connected = -1;
 		for (let c = 0; c < candidates.length && c < 8; c++) {
-			if (isPlausibleContinuation(i, candidates[c].j)) {
-				connected = candidates[c].j;
+			const j = candidates[c].j;
+			if (isNearStation(coords[j]) || isPlausibleContinuation(i, j)) {
+				connected = j;
 				break;
 			}
 		}
@@ -456,7 +504,16 @@ export function buildGraphFromRoutes(routeFeatures) {
 		adjDist[p] = ed[e];
 	}
 
-	return { coords, start, adjEdge, adjOther, adjDist, erefs, coordIndex, nodeLines };
+	return {
+		coords,
+		start,
+		adjEdge,
+		adjOther,
+		adjDist,
+		erefs,
+		coordIndex,
+		nodeLines,
+	};
 }
 
 /**
@@ -479,11 +536,7 @@ export function buildGraphFromRoutes(routeFeatures) {
  * @returns {function} (point: [lat, lon], allowedLines?: Set<string>) =>
  *   { index: number, distKm: number } — index is -1 if nothing was found
  */
-export function makeNearestNode(
-	graph,
-	gridSize = 0.02,
-	maxKm = 3.0,
-) {
+export function makeNearestNode(graph, gridSize = 0.02, maxKm = 3.0) {
 	// Build spatial grid: each cell contains indices of nodes within that cell.
 	const grid = new Map();
 	for (let i = 0; i < graph.coords.length; i++) {

@@ -87,9 +87,13 @@
  *   {
  *     knownStations: string[],              // All stations that resolved AND snapped to the graph (in-game resolvable stations)
  *     stations: { [name]: [lat, lon] },    // Station gazetteer (normalized name → canonical on-track coordinate)
- *     segments: { [key]: string },          // Google Encoded Polylines (key = sorted pair "aNorm|bNorm", a < b)
- *     segmentColors: { [key]: number[][] } // Color boundaries: [[startIndex, colorCode], ...]
+ *     segments: { [key]: string },          // Google Encoded Polylines (key = sorted pair "a|b", a < b)
+ *     segmentColors: { [key]: number[][] },// Color boundaries: [[startIndex, colorCode], ...]
  *                                          // colorCode: 0=green (drivable), 1=red (non-drivable), 2=grey (no data)
+ *     segmentLines: { [key]: string[] },   // Wiki line numbers actually traversed by the path (e.g. ["1"] → LK1)
+ *     segmentDominant: { [key]: string },  // The line the segment primarily belongs to (longest distance + title-match)
+ *     segmentGroupLines: { [key]: string[] }, // Lines covering ≥10% of the path (for playable-area grouping)
+ *     lineInfo: { [lineNo]: { lkname?, title?, link? } }  // Wiki metadata per line (tooltip text)
  *   }
  *
  * The runtime (lib/trainRoute.ts) decodes each segment's polyline (reversing
@@ -200,10 +204,7 @@ function extractStationAnchor(gj) {
 	const arcLenKm = (ls) => {
 		let len = 0;
 		for (let i = 1; i < ls.length; i++) {
-			len += haversineKm(
-				[ls[i - 1][1], ls[i - 1][0]],
-				[ls[i][1], ls[i][0]],
-			);
+			len += haversineKm([ls[i - 1][1], ls[i - 1][0]], [ls[i][1], ls[i][0]]);
 		}
 		return len;
 	};
@@ -279,7 +280,9 @@ function extractStationAnchor(gj) {
 			return { anchor: vertexCentroid(best), loopOnly: true };
 		}
 		const only = lines.find((ls) => ls.length >= 1);
-		return only ? { anchor: [only[0][1], only[0][0]], loopOnly: false } : { anchor: null, loopOnly: false };
+		return only
+			? { anchor: [only[0][1], only[0][0]], loopOnly: false }
+			: { anchor: null, loopOnly: false };
 	}
 	if (rings.length > 0) {
 		// Largest ring by bounding-box diagonal; centroid = vertex average.
@@ -386,7 +389,13 @@ async function main() {
 			`  [wiki] Stations with coords: ${stationCoords.size} (+${wikiLoopCentroids.size} loop-only, deferred)`,
 		);
 
-		return { wikiMapData, stationCoords, knownStations, routeFeatures, wikiLoopCentroids };
+		return {
+			wikiMapData,
+			stationCoords,
+			knownStations,
+			routeFeatures,
+			wikiLoopCentroids,
+		};
 	})();
 
 	const timetablesPromise = (async () => {
@@ -442,8 +451,13 @@ async function main() {
 		log(`  [timetables] Community EDR: ${all.length} timetables`);
 	})();
 
-	const { wikiMapData, stationCoords, knownStations, routeFeatures, wikiLoopCentroids } =
-		await wikiPromise;
+	const {
+		wikiMapData,
+		stationCoords,
+		knownStations,
+		routeFeatures,
+		wikiLoopCentroids,
+	} = await wikiPromise;
 	await timetablesPromise;
 
 	// Supplement station coordinates with local files and the SimRail API.
@@ -530,9 +544,7 @@ async function main() {
 		}
 	}
 	if (loopFallbackCount > 0) {
-		log(
-			`  Loop-centroid fallbacks (no game coordinate): ${loopFallbackCount}`,
-		);
+		log(`  Loop-centroid fallbacks (no game coordinate): ${loopFallbackCount}`);
 	}
 
 	// ========================================================================
@@ -686,10 +698,12 @@ async function main() {
 		}
 	}
 
+	const stationCoordList = [...stationCoords.values()];
 	const graphAvail = buildGraphFromRoutes(
 		routeFeatures.filter((f) => f.available),
+		stationCoordList,
 	);
-	const graphFull = buildGraphFromRoutes(routeFeatures);
+	const graphFull = buildGraphFromRoutes(routeFeatures, stationCoordList);
 	const nearestAvail = makeNearestNode(graphAvail, 0.02, SNAP_MAX_KM);
 	const nearestFull = makeNearestNode(graphFull, 0.02, SNAP_MAX_KM);
 	const routerAvail = makeRouter(graphAvail);
@@ -698,15 +712,106 @@ async function main() {
 		`  Graph avail: ${graphAvail.coords.length} nodes, full: ${graphFull.coords.length} nodes`,
 	);
 
+	// Per-line wiki metadata (computed early — tryRoute needs line titles for
+	// the dominant-line title-match tiebreak). A line can have two route
+	// entries (available + not available); merge them so an lkname present on
+	// only one entry (e.g. LK1 "Wiedenka" on the not-available entry) is kept.
+	const lineInfo = {};
+	for (const route of wikiMapData.routes) {
+		const match = route.name.match(/^LK(\d+)$/);
+		if (!match) continue;
+		const lineNo = match[1];
+		const existing = lineInfo[lineNo] || {};
+		if (route.lkname && !existing.lkname) existing.lkname = route.lkname;
+		if (route.title) existing.title = route.title;
+		if (route.link) existing.link = route.link;
+		lineInfo[lineNo] = existing;
+	}
+
+	// Does a line's wiki title corridor contain a segment? Both segment
+	// stations must project within [−margin, 1+margin] of the line's title
+	// endpoint pair — i.e. the segment lies between the line's endpoints, not
+	// merely on a line that passes through. This distinguishes LK11
+	// (Skierniewice–Łowicz Główny, which contains Bełchów–Płyćwia) from LK1
+	// (Warszawa Zachodnia–Katowice, which also contains it but is far broader).
+	function projectT(s, p1, p2) {
+		const cosLat = Math.cos((s[0] * Math.PI) / 180);
+		const sx = s[1] * cosLat * 111.32;
+		const sy = s[0] * 111.32;
+		const ax = p1[1] * cosLat * 111.32;
+		const ay = p1[0] * 111.32;
+		const bx = p2[1] * cosLat * 111.32;
+		const by = p2[0] * 111.32;
+		const dx = bx - ax;
+		const dy = by - ay;
+		const len2 = dx * dx + dy * dy;
+		if (len2 === 0) return { t: 0, dist: Infinity };
+		const t = ((sx - ax) * dx + (sy - ay) * dy) / len2;
+		const fx = sx - (ax + t * dx);
+		const fy = sy - (ay + t * dy);
+		return { t, dist: Math.sqrt(fx * fx + fy * fy) };
+	}
+	function corridorLength(lineNo) {
+		const title = lineInfo[lineNo]?.title;
+		if (!title) return Infinity;
+		const parts = title.split(" - ").map((p) => normalizeName(p));
+		if (parts.length !== 2) return Infinity;
+		const p1 = stationCoords.get(parts[0]);
+		const p2 = stationCoords.get(parts[1]);
+		if (!p1 || !p2) return Infinity;
+		return haversineKm(p1, p2);
+	}
+	function corridorContains(lineNo, segA, segB) {
+		const title = lineInfo[lineNo]?.title;
+		if (!title) return false;
+		const parts = title.split(" - ").map((p) => normalizeName(p));
+		if (parts.length !== 2) return false;
+		const p1 = stationCoords.get(parts[0]);
+		const p2 = stationCoords.get(parts[1]);
+		if (!p1 || !p2) return false;
+		const margin = 0.3;
+		const tA = projectT(segA, p1, p2);
+		const tB = projectT(segB, p1, p2);
+		// Both stations must project within the corridor AND be within 5 km of
+		// the corridor line. The distance check rejects stations that are far
+		// off the line (e.g. Płyćwia is 11 km from LK11's Skierniewice→Łowicz
+		// corridor — it's south of Skierniewice, opposite to Łowicz Główny).
+		const MAX_CORRIDOR_DIST_KM = 5;
+		return (
+			tA.t >= -margin &&
+			tA.t <= 1 + margin &&
+			tA.dist <= MAX_CORRIDOR_DIST_KM &&
+			tB.t >= -margin &&
+			tB.t <= 1 + margin &&
+			tB.dist <= MAX_CORRIDOR_DIST_KM
+		);
+	}
+	// Does a line's wiki title terminate at one of the segment's stations?
+	// e.g. LK62 "Tunel - Sosnowiec Główny" terminates at Sosnowiec Główny, so
+	// it's grouped with the sosnowiec południowy|sosnowiec główny segment even
+	// though LK62 only covers a short shared tail there. This distinguishes a
+	// line that ends at the segment's endpoint (should be grouped) from one
+	// that merely passes through a junction on the way elsewhere (shouldn't).
+	function titleEndpointInSegment(lineNo, nameA, nameB) {
+		const title = lineInfo[lineNo]?.title;
+		if (!title) return false;
+		const parts = title.split(" - ").map((p) => normalizeName(p));
+		if (parts.length !== 2) return false;
+		return (
+			parts[0] === nameA ||
+			parts[0] === nameB ||
+			parts[1] === nameA ||
+			parts[1] === nameB
+		);
+	}
+
 	// Resolve an exact [lat, lon] (a canonical node coordinate) to its node
 	// index in the given graph, via the coordinate-dedup key.
 	const coordKey = (lat, lon) => `${lat.toFixed(6)},${lon.toFixed(6)}`;
 	const nodeIndexFor = (graph, coord) =>
 		graph.coordIndex.get(coordKey(coord[0], coord[1])) ?? -1;
 
-	log(
-		`  Snapping ${servedLines.size} stations to canonical nodes...`,
-	);
+	log(`  Snapping ${servedLines.size} stations to canonical nodes...`);
 	const canonicalNodes = new Map(); // normalized name → [lat, lon]
 	const droppedStations = [];
 	for (const [name, lines] of servedLines) {
@@ -778,6 +883,8 @@ async function main() {
 
 	const routeSegments = {};
 	const segmentLines = {}; // key → lines actually traversed by the path
+	const segmentDominant = {}; // key → the line the segment primarily belongs to
+	const segmentGroupLines = {}; // key → lines covering ≥10% of the path (for grouping)
 	const segmentUsedFullGraph = new Set();
 	let computed = 0;
 	let fallback = 0;
@@ -886,20 +993,73 @@ async function main() {
 
 		if (!pathIndices || pathIndices.length < 2) return null;
 
-		// Collect the lines actually traversed by the accepted path.
+		// Collect the lines traversed by the accepted path, plus the distance
+		// spent on each. We iterate ALL edges between consecutive path nodes
+		// (not just the first) so that track shared by multiple lines credits
+		// every line — e.g. LK1+LK660+LK62 sharing the Sosnowiec Południowy→
+		// Główny section. The dominant line (for the tooltip) is the one whose
+		// wiki title corridor contains the segment AND has the shortest
+		// corridor (most specific): LK11 "Skierniewice–Łowicz Główny" wins over
+		// LK1 "Warszawa Zachodnia–Katowice" for a Bełchów–Płyćwia segment that
+		// both contain. LK660 "Sosnowiec Południowy–Główny" wins for that exact
+		// segment (its corridor IS the segment). Falls back to longest
+		// on-track distance when no line's corridor contains the segment.
 		const usedLineSet = new Set();
+		/** lineNo → km travelled on that line. */
+		const lineDistKm = {};
+		let totalPathKm = 0;
 		for (let i = 0; i < pathIndices.length - 1; i++) {
+			let stepDist = 0;
+			const stepLines = new Set();
 			for (
 				let p = graph.start[pathIndices[i]];
 				p < graph.start[pathIndices[i] + 1];
 				p++
 			) {
 				if (graph.adjOther[p] !== pathIndices[i + 1]) continue;
+				if (stepDist === 0) stepDist = graph.adjDist[p];
 				const refs = graph.erefs[graph.adjEdge[p]];
-				if (refs) for (const r of refs) usedLineSet.add(r);
-				break;
+				if (refs) for (const r of refs) stepLines.add(r);
+			}
+			if (stepDist > 0) {
+				totalPathKm += stepDist;
+				for (const r of stepLines) {
+					usedLineSet.add(r);
+					lineDistKm[r] = (lineDistKm[r] || 0) + stepDist;
+				}
 			}
 		}
+		const [nameA, nameB] = seg.key.split("|");
+		let dominantLine = null;
+		let dominantKm = -1;
+		let corridorLine = null;
+		let corridorKm = Infinity;
+		for (const [r, km] of Object.entries(lineDistKm)) {
+			if (km > dominantKm) {
+				dominantKm = km;
+				dominantLine = r;
+			}
+			const cLen = corridorLength(r);
+			if (corridorContains(r, fromCoord, toCoord) && cLen < corridorKm) {
+				corridorKm = cLen;
+				corridorLine = r;
+			}
+		}
+		if (corridorLine) dominantLine = corridorLine;
+		// Group lines (for highlighting): the dominant line always, plus any
+		// line whose wiki title terminates at one of the segment's stations
+		// (a line that ENDS at the segment's endpoint belongs to it even via
+		// a short shared tail — e.g. LK62 "Tunel - Sosnowiec Główny" on the
+		// LK660 segment into Sosnowiec Główny). Pure distance-based grouping is
+		// NOT used: lines that merely share track (e.g. LK1+LK11 near Bełchów)
+		// are separate lines and must not cross-highlight.
+		const groupSet = new Set([dominantLine]);
+		for (const r of usedLineSet) {
+			if (r !== dominantLine && titleEndpointInSegment(r, nameA, nameB)) {
+				groupSet.add(r);
+			}
+		}
+		const groupLines = [...groupSet].sort((a, b) => Number(a) - Number(b));
 
 		// Use the A* path as-is — snapped nodes are already on the track.
 		const points = pathIndices.map((idx) => graph.coords[idx]);
@@ -944,6 +1104,11 @@ async function main() {
 			// classification in Step 4 — more accurate than timetable hints,
 			// and the only source for hint-less freight segments).
 			usedLines: [...usedLineSet],
+			// The line the segment primarily belongs to (longest on-track
+			// distance, with a title-match tiebreak) — the tooltip line.
+			dominantLine,
+			// Lines covering ≥10% of the path (for playable-area grouping).
+			groupLines,
 		};
 	}
 
@@ -974,6 +1139,8 @@ async function main() {
 
 		routeSegments[seg.key] = result.encoded;
 		segmentLines[seg.key] = result.usedLines;
+		segmentDominant[seg.key] = result.dominantLine;
+		segmentGroupLines[seg.key] = result.groupLines;
 		if (usedFull) segmentUsedFullGraph.add(seg.key);
 		computed++;
 		if (usedFull) computedFull++;
@@ -1107,8 +1274,7 @@ async function main() {
 		// may legitimately traverse several lines.
 		const lines =
 			segmentLines[key] ||
-			(segments.get(key)?.allLines.filter((l) => wikiLineNumbers.has(l)) ??
-				[]);
+			(segments.get(key)?.allLines.filter((l) => wikiLineNumbers.has(l)) ?? []);
 		const availTracks = lines.flatMap((l) => lineAvailableFeatures[l] || []);
 		const notAvailTracks = lines.flatMap(
 			(l) => lineNotAvailableFeatures[l] || [],
@@ -1185,7 +1351,9 @@ async function main() {
 		}
 	}
 	if (greyRisk.length > 0) {
-		log(`  GREY RISK — ${greyRisk.length} uncomputed pairs > ${GREY_RISK_KM}km apart:`);
+		log(
+			`  GREY RISK — ${greyRisk.length} uncomputed pairs > ${GREY_RISK_KM}km apart:`,
+		);
 		for (const label of greyRisk) log(`    - ${label}`);
 	} else {
 		log(`  Grey-risk report: none > ${GREY_RISK_KM}km`);
@@ -1197,6 +1365,10 @@ async function main() {
 		stations: Object.fromEntries(stationCoords),
 		segments: routeSegments,
 		segmentColors,
+		segmentLines,
+		segmentDominant,
+		segmentGroupLines,
+		lineInfo,
 	};
 	const json = JSON.stringify(output);
 	fs.writeFileSync(OUTPUT_PATH, json);
