@@ -296,17 +296,20 @@ async function main() {
 		);
 
 		log("  [wiki] Fetching route geometries...");
-		const routeWays = [];
-		await pool(wikiMapData.routes, 10, async (route) => {
+		// Kept in the wiki's route order, not fetch completion order: the
+		// graph's node numbering (and so path tie-breaks) follows it.
+		const waysByRoute = wikiMapData.routes.map(() => []);
+		await pool(wikiMapData.routes, 10, async (route, i) => {
 			const lk = parseWikiRoute(route);
 			if (!lk) return;
 			try {
 				const gj = await cachedFetchJson(WIKI_BASE + route.url, lk.cacheName);
-				routeWays.push(...waysFromRouteGeoJson(gj, lk.line, lk.available));
+				waysByRoute[i] = waysFromRouteGeoJson(gj, lk.line, lk.available);
 			} catch (err) {
 				log(`  [wiki] Failed ${route.name}: ${err.message}`);
 			}
 		});
+		const routeWays = waysByRoute.flat();
 		log(`  [wiki] Track ways: ${routeWays.length}`);
 
 		log("  [wiki] Fetching station coordinates...");
@@ -504,8 +507,13 @@ async function main() {
 	const wikiLines = new Set(routeWays.map((w) => w.line));
 	const lineOf = (entry) => String(Number(entry.line) || "") || null;
 	const count = (map, key) => map.set(key, (map.get(key) ?? 0) + 1);
-	const mostCommon = (map) =>
-		[...map.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+	// Line counts, most frequent first; ties by line number, so the result
+	// doesn't depend on the order the timetables come in.
+	const byFrequency = (counts) =>
+		[...counts.entries()]
+			.sort((a, b) => b[1] - a[1] || Number(a[0]) - Number(b[0]))
+			.map(([line]) => line);
+	const mostCommon = (counts) => byFrequency(counts)[0] ?? null;
 	const pairs = new Map();
 	for (const { timetable } of allTimetables) {
 		if (!Array.isArray(timetable)) continue;
@@ -564,10 +572,7 @@ async function main() {
 		}
 	}
 	const stationLines = new Map(
-		[...stationLineCounts].map(([name, counts]) => [
-			name,
-			[...counts.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l),
-		]),
+		[...stationLineCounts].map(([name, counts]) => [name, byFrequency(counts)]),
 	);
 
 	// A station's point on a given line: the track of that line nearest to
@@ -797,13 +802,20 @@ async function main() {
 		}
 		stations[name] = graph.coords[node];
 	}
+	// Sorted by plain code-unit order (not locale-aware), so regenerating
+	// only produces a diff when the data changes.
+	const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+	const sortKeys = (obj) =>
+		Object.fromEntries(Object.entries(obj).sort(([a], [b]) => byName(a, b)));
 	const output = {
 		version: 2,
-		knownStations: [...knownStations].filter((name) => name in stations),
-		stations,
-		segments,
-		segmentColors,
-		joins,
+		knownStations: [...knownStations]
+			.filter((name) => name in stations)
+			.sort(byName),
+		stations: sortKeys(stations),
+		segments: sortKeys(segments),
+		segmentColors: sortKeys(segmentColors),
+		joins: sortKeys(joins),
 	};
 	fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output));
 	execFileSync(OXFMT, [OUTPUT_PATH], { stdio: "ignore" });
