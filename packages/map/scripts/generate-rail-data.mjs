@@ -407,19 +407,16 @@ async function main() {
 	await timetablesPromise;
 
 	log("Step 1b: Supplement station coordinates from local files + API");
-	const localBundled = JSON.parse(
-		fs.readFileSync(
-			path.join(__dirname, "..", "components", "stations.json"),
-			"utf8",
+	const localCatalogs = [
+		"stations.json",
+		"stationsPassenger.json",
+		"stationsRemote.json",
+	].flatMap((file) =>
+		JSON.parse(
+			fs.readFileSync(path.join(__dirname, "..", "components", file), "utf8"),
 		),
 	);
-	const localRemote = JSON.parse(
-		fs.readFileSync(
-			path.join(__dirname, "..", "components", "stationsRemote.json"),
-			"utf8",
-		),
-	);
-	for (const s of [...localBundled, ...localRemote]) {
+	for (const s of localCatalogs) {
 		if (s.Name && s.Latititude && s.Longitude) {
 			const norm = normalizeName(s.Name);
 			if (!stationCoords.has(norm)) {

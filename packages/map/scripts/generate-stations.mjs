@@ -5,8 +5,9 @@
  * SimRail wiki (source of truth — it gets constantly updated).
  *
  * Outputs:
- *   - components/stations.json        → "Unplayable dispatch stations" layer
- *   - components/stationsRemote.json  → "Remote dispatch stations" layer
+ *   - components/stations.json          → "Unplayable dispatch stations" layer
+ *   - components/stationsPassenger.json → "Passenger stations" layer
+ *   - components/stationsRemote.json    → "Remote dispatch stations" layer
  *
  * Data flow:
  *   1. Fetch the wiki map station list (map-data.json: entries with
@@ -21,10 +22,12 @@
  *      an area-weighted centroid, for lines the vertex average).
  *   4. stationsRemote.json: entries from `controlled` arrays, keyed with
  *      id = parent station name (the controller shown in the popup).
- *   5. stations.json: all wiki map stations that are NOT playable anywhere:
- *      not a dispatch station in the playable list, not a controlled
- *      (remote) station, and not present in the stations-open API
- *      (dispatch stations reported by live game servers).
+ *   5. All wiki map stations that are NOT playable anywhere: not a
+ *      dispatch station in the playable list, not a controlled (remote)
+ *      station, and not present in the stations-open API (dispatch
+ *      stations reported by live game servers). Passenger stops (wiki
+ *      type "po", przystanek osobowy) go to stationsPassenger.json, the
+ *      rest (border and other dispatch stations) to stations.json.
  *
  * Usage:
  *   node scripts/generate-stations.mjs [--refresh] [--dry]
@@ -37,6 +40,12 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, ".cache");
 const STATIONS_OUT = path.join(__dirname, "..", "components", "stations.json");
+const PASSENGER_OUT = path.join(
+	__dirname,
+	"..",
+	"components",
+	"stationsPassenger.json",
+);
 const REMOTE_OUT = path.join(
 	__dirname,
 	"..",
@@ -261,11 +270,13 @@ async function main() {
 	}
 	remoteOut.sort((a, b) => a.Name.localeCompare(b.Name, "pl"));
 
-	// 6. Build stations.json (unplayable)
+	// 6. Build stations.json (unplayable) and stationsPassenger.json
 	//    A station is unplayable if it is on the wiki map but NOT:
 	//    a playable dispatch station, a remote (controlled) station, or a
-	//    live dispatch station from the API.
+	//    live dispatch station from the API. Passenger stops ("po") are
+	//    listed separately.
 	const unplayableOut = [];
+	const passengerOut = [];
 	for (const station of mapData.stations) {
 		const norm = normalizeName(station.name);
 		if (playable.has(norm)) continue;
@@ -273,12 +284,15 @@ async function main() {
 		if (liveStations.has(norm)) continue; // became playable (API)
 		const coord = centroids.get(norm);
 		if (!coord) continue;
-		unplayableOut.push(makeEntry(station.name, coord));
+		const out = station.type === "po" ? passengerOut : unplayableOut;
+		out.push(makeEntry(station.name, coord));
 	}
 	unplayableOut.sort((a, b) => a.Name.localeCompare(b.Name, "pl"));
+	passengerOut.sort((a, b) => a.Name.localeCompare(b.Name, "pl"));
 
 	console.log(`\nRemote stations: ${remoteOut.length}`);
-	console.log(`Unplayable stations: ${unplayableOut.length}`);
+	console.log(`Unplayable dispatch stations: ${unplayableOut.length}`);
+	console.log(`Passenger stations: ${passengerOut.length}`);
 
 	if (failures.length > 0) {
 		console.error(
@@ -297,7 +311,13 @@ async function main() {
 		STATIONS_OUT,
 		JSON.stringify(unplayableOut, null, "\t") + "\n",
 	);
-	console.log(`Written:\n  ${REMOTE_OUT}\n  ${STATIONS_OUT}`);
+	fs.writeFileSync(
+		PASSENGER_OUT,
+		JSON.stringify(passengerOut, null, "\t") + "\n",
+	);
+	console.log(
+		`Written:\n  ${REMOTE_OUT}\n  ${STATIONS_OUT}\n  ${PASSENGER_OUT}`,
+	);
 }
 
 async function pool(items, limit, fn) {
