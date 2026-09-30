@@ -227,5 +227,31 @@ async function computeRoute(train: {
 		}
 	}
 
+	// Remove backtracks from each segment's polyline. At junctions, the train
+	// may go out to a stop and reverse back through the same tracks. When
+	// consecutive segments are merged, this creates visible loops on the map
+	// (the path revisits the same coordinates). This pass detects duplicate
+	// coordinates and removes the out-and-back portion.
+	for (const seg of segments) {
+		if (seg.color === "grey" || seg.points.length < 4) continue;
+		let changed = true;
+		while (changed && seg.points.length > 2) {
+			changed = false;
+			const seen = new Map<string, number>();
+			for (let i = 0; i < seg.points.length; i++) {
+				const key = `${seg.points[i][0]},${seg.points[i][1]}`;
+				const prev = seen.get(key);
+				if (prev !== undefined) {
+					// Duplicate found: remove the sub-path between the two
+					// occurrences (the out-and-back), keeping the first.
+					seg.points.splice(prev + 1, i - prev);
+					changed = true;
+					break;
+				}
+				seen.set(key, i);
+			}
+		}
+	}
+
 	return segments;
 }
