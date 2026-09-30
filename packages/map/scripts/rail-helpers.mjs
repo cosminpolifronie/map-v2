@@ -188,7 +188,13 @@ export function buildRailGraph(ways) {
 			const to = pts[Math.min(pts.length - 1, i + 1)];
 			nodeBearings[n].push(bearingDeg(from, to));
 			if (prev >= 0 && prev !== n) {
-				addEdge(prev, n, haversineKm(coords[prev], coords[n]), way.line, way.available);
+				addEdge(
+					prev,
+					n,
+					haversineKm(coords[prev], coords[n]),
+					way.line,
+					way.available,
+				);
 			}
 			prev = n;
 		}
@@ -227,7 +233,8 @@ export function buildRailGraph(ways) {
 		nodeBearings[i].some((bi) =>
 			nodeBearings[j].some((bj) => axisDiffDeg(bi, bj) <= PARALLEL_MAX_DEG),
 		);
-	const shareLine = (i, j) => [...nodeLines[i]].some((l) => nodeLines[j].has(l));
+	const shareLine = (i, j) =>
+		[...nodeLines[i]].some((l) => nodeLines[j].has(l));
 	const shareWay = (i, j) => [...nodeWays[i]].some((w) => nodeWays[j].has(w));
 
 	const connected = new Set();
@@ -268,7 +275,11 @@ export function buildRailGraph(ways) {
 			if (nodeElevated[j] || shareWay(i, j)) continue;
 			// The gap must continue the dead end's direction and join a
 			// track running the same way.
-			if (km > 0.002 && axisDiffDeg(out, bearingDeg(coords[i], coords[j])) > PARALLEL_MAX_DEG) continue;
+			if (
+				km > 0.002 &&
+				axisDiffDeg(out, bearingDeg(coords[i], coords[j])) > PARALLEL_MAX_DEG
+			)
+				continue;
 			if (!isParallel(i, j)) continue;
 			if (addConnector(i, j, km)) deadEndConnectors++;
 			break;
@@ -426,7 +437,7 @@ export function findPath(graph, from, to, allowEdge) {
 	if (!done.has(to)) return null;
 
 	const path = [];
-	for (let u = to; u !== from; ) {
+	for (let u = to; u !== from;) {
 		const e = via.get(u);
 		path.push(e);
 		u = edges[e].a === u ? edges[e].b : edges[e].a;
@@ -444,7 +455,9 @@ function perpendicularKm(p, a, b) {
 	const dy = by - ay;
 	const len2 = dx * dx + dy * dy;
 	const t =
-		len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+		len2 === 0
+			? 0
+			: Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
 	return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 

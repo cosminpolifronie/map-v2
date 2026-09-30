@@ -147,6 +147,8 @@ async function computeRoute(train: {
 		const norm = normalizeName(name);
 		const coordArr = railData.stations[norm];
 		if (!coordArr) continue;
+		// A station listed twice in a row is one stop, as in the generator.
+		if (resolved[resolved.length - 1]?.name === norm) continue;
 		resolved.push({
 			coord: [coordArr[0], coordArr[1]],
 			name: norm,
@@ -172,7 +174,10 @@ async function computeRoute(train: {
 	// from points[i] to points[i + 1], null where nothing is drawn.
 	const points: RoutePoint[] = [];
 	const colors: (ColoredSegment["color"] | null)[] = [];
-	const append = (pts: RoutePoint[], pieceColors: ColoredSegment["color"][]) => {
+	const append = (
+		pts: RoutePoint[],
+		pieceColors: ColoredSegment["color"][],
+	) => {
 		pts.forEach((p, i) => {
 			if (i > 0) colors.push(pieceColors[i - 1]);
 			points.push(p);
@@ -196,7 +201,12 @@ async function computeRoute(train: {
 			// long grey lines.
 			// Also skip them at the beginning or end of the route — there's
 			// nothing to connect to, so they just dangle.
-			if (a.line === 0 || b.line === 0 || i === 0 || i === effective.length - 2) {
+			if (
+				a.line === 0 ||
+				b.line === 0 ||
+				i === 0 ||
+				i === effective.length - 2
+			) {
 				continue;
 			}
 			if (points.length > 0) colors.push(null);
@@ -221,7 +231,9 @@ async function computeRoute(train: {
 			const forward = prev.name < b.name;
 			const join =
 				railData.joins[
-					forward ? `${prev.name}|${a.name}|${b.name}` : `${b.name}|${a.name}|${prev.name}`
+					forward
+						? `${prev.name}|${a.name}|${b.name}`
+						: `${b.name}|${a.name}|${prev.name}`
 				];
 			if (join) {
 				const [cutIn, cutOut] = forward ? join.cut : [join.cut[1], join.cut[0]];
@@ -231,7 +243,10 @@ async function computeRoute(train: {
 				if (!forward) joinPts.reverse();
 				const joinColor = colors[colors.length - 1] ?? legColors[0];
 				points.pop(); // the join starts on it
-				append(joinPts, joinPts.slice(1).map(() => joinColor));
+				append(
+					joinPts,
+					joinPts.slice(1).map(() => joinColor),
+				);
 				legPts = legPts.slice(cutOut);
 				legColors = legColors.slice(cutOut);
 			}

@@ -76,6 +76,7 @@
  *   train; render that train on the map to see what's wrong.
  */
 
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -96,6 +97,17 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, ".cache");
 const OUTPUT_PATH = path.join(__dirname, "..", "components", "railData.json");
+// The repository formatter; generated files are committed, so they're kept
+// in its format (`pnpm format:check` runs in CI).
+const OXFMT = path.join(
+	__dirname,
+	"..",
+	"..",
+	"..",
+	"node_modules",
+	".bin",
+	"oxfmt",
+);
 
 const OFFICIAL_TIMETABLE_BASE =
 	"https://api1.aws.simrail.eu:8082/api/getAllTimetables";
@@ -390,12 +402,8 @@ async function main() {
 		log(`  [timetables] Community EDR: ${all.length} timetables`);
 	})();
 
-	const {
-		stationCoords,
-		knownStations,
-		routeWays,
-		wikiLoopCentroids,
-	} = await wikiPromise;
+	const { stationCoords, knownStations, routeWays, wikiLoopCentroids } =
+		await wikiPromise;
 	await timetablesPromise;
 
 	log("Step 1b: Supplement station coordinates from local files + API");
@@ -575,7 +583,12 @@ async function main() {
 			stationNodeCache.set(
 				key,
 				anchor
-					? nearestNode(graph, anchor, line ? new Set([line]) : null, SNAP_MAX_KM)
+					? nearestNode(
+							graph,
+							anchor,
+							line ? new Set([line]) : null,
+							SNAP_MAX_KM,
+						)
 					: -1,
 			);
 		}
@@ -594,16 +607,20 @@ async function main() {
 			colors.push(edge.line === null ? null : edge.available ? GREEN : RED);
 		}
 		for (let i = 0; i < colors.length; i++) {
-			colors[i] ??= i > 0 ? colors[i - 1] : (colors.find((c) => c !== null) ?? GREEN);
+			colors[i] ??=
+				i > 0 ? colors[i - 1] : (colors.find((c) => c !== null) ?? GREEN);
 		}
 		const keep = new Set([0]);
 		const runStarts = [];
-		for (let i = 0; i < colors.length; ) {
+		for (let i = 0; i < colors.length;) {
 			let j = i;
 			while (j < colors.length && colors[j] === colors[i]) j++;
 			runStarts.push([i, colors[i]]);
 			const run = nodes.slice(i, j + 1);
-			for (const k of simplifyIndices(run.map((n) => graph.coords[n]), SIMPLIFY_KM)) {
+			for (const k of simplifyIndices(
+				run.map((n) => graph.coords[n]),
+				SIMPLIFY_KM,
+			)) {
 				keep.add(i + k);
 			}
 			i = j;
@@ -625,7 +642,8 @@ async function main() {
 		}
 		return km;
 	};
-	const encodeNodes = (nodes) => encodePolyline(nodes.map((n) => graph.coords[n]));
+	const encodeNodes = (nodes) =>
+		encodePolyline(nodes.map((n) => graph.coords[n]));
 
 	log("Step 4: Route legs between stations");
 	// A leg runs strictly on the lines its timetable points are on, from
@@ -654,14 +672,17 @@ async function main() {
 		}
 		// It may switch between two of its lines where they run side by side
 		// (the switch is at a timetable point without coordinates).
-		const onLeg = (node) => [...graph.nodeLines[node]].some((l) => pair.lines.has(l));
+		const onLeg = (node) =>
+			[...graph.nodeLines[node]].some((l) => pair.lines.has(l));
 		const edgePath = findPath(graph, from, to, (e) =>
 			e.line === null
 				? !e.crossLine || (onLeg(e.a) && onLeg(e.b))
 				: pair.lines.has(e.line),
 		);
 		if (!edgePath) {
-			failures.push(`${pair.key}: no path on lines ${[...pair.lines].join(",")}`);
+			failures.push(
+				`${pair.key}: no path on lines ${[...pair.lines].join(",")}`,
+			);
 			continue;
 		}
 		legs.set(pair.key, { ...simplifyPath(from, edgePath), lines: pair.lines });
@@ -710,14 +731,19 @@ async function main() {
 			const inMid = Math.ceil((inLeg.nodes.length - 1) / 2);
 			const outMid = Math.floor((outLeg.nodes.length - 1) / 2);
 			let cutIn = inLeg.nodes.length - 1;
-			while (cutIn > inMid && polylineKm(inLeg.nodes.slice(cutIn)) < JOIN_KM) cutIn--;
+			while (cutIn > inMid && polylineKm(inLeg.nodes.slice(cutIn)) < JOIN_KM)
+				cutIn--;
 			let cutOut = 0;
-			while (cutOut < outMid && polylineKm(outLeg.nodes.slice(0, cutOut + 1)) < JOIN_KM)
+			while (
+				cutOut < outMid &&
+				polylineKm(outLeg.nodes.slice(0, cutOut + 1)) < JOIN_KM
+			)
 				cutOut++;
 
 			const center = graph.coords[inLeg.nodes[inLeg.nodes.length - 1]];
 			const stationOwn = new Set(stationLines.get(station) ?? []);
-			const inArea = (e) => haversineKm(graph.coords[e.a], center) <= STATION_AREA_KM;
+			const inArea = (e) =>
+				haversineKm(graph.coords[e.a], center) <= STATION_AREA_KM;
 			const edgePath = findPath(
 				graph,
 				inLeg.nodes[cutIn],
@@ -735,7 +761,8 @@ async function main() {
 			}
 			const { nodes } = simplifyPath(inLeg.nodes[cutIn], edgePath);
 			const concatKm =
-				polylineKm(inLeg.nodes.slice(cutIn)) + polylineKm(outLeg.nodes.slice(0, cutOut + 1));
+				polylineKm(inLeg.nodes.slice(cutIn)) +
+				polylineKm(outLeg.nodes.slice(0, cutOut + 1));
 			// Only worth storing where plain concatenation is wrong.
 			if (legsMeet && polylineKm(nodes) > concatKm - 0.02) continue;
 			joins[key] = {
@@ -781,9 +808,11 @@ async function main() {
 		segmentColors,
 		joins,
 	};
-	const json = JSON.stringify(output);
-	fs.writeFileSync(OUTPUT_PATH, json);
-	log(`  Written ${OUTPUT_PATH} (${(json.length / 1024).toFixed(0)} KB)`);
+	fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output));
+	execFileSync(OXFMT, [OUTPUT_PATH], { stdio: "ignore" });
+	log(
+		`  Written ${OUTPUT_PATH} (${(fs.statSync(OUTPUT_PATH).size / 1024).toFixed(0)} KB)`,
+	);
 
 	log("Step 7: Check the routes (scripts/check-routes.mjs)");
 	const { ok } = await checkRoutes({ log });

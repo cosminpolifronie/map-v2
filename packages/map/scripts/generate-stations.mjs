@@ -105,27 +105,26 @@ function stationCentroid(gj) {
 		return [a, x, y];
 	};
 
+	const addPolygon = (rings) => {
+		for (let r = 0; r < rings.length; r++) {
+			const [a, x, y] = ringCentroid(rings[r]);
+			// Holes wind opposite to the outer ring, so the signed sums already
+			// have opposite signs; normalise each ring's winding first, then
+			// add the outer ring and subtract the holes.
+			const sign = Math.sign(a) * (r === 0 ? 1 : -1);
+			sumArea += sign * a;
+			cx += sign * x;
+			cy += sign * y;
+		}
+	};
+
 	for (const f of gj.features || []) {
 		const g = f.geometry;
 		if (!g) continue;
 		if (g.type === "Polygon") {
-			for (let r = 0; r < g.coordinates.length; r++) {
-				const [a, x, y] = ringCentroid(g.coordinates[r]);
-				const sign = r === 0 ? 1 : -1; // outer ring positive, holes negative
-				sumArea += sign * a;
-				cx += sign * x;
-				cy += sign * y;
-			}
+			addPolygon(g.coordinates);
 		} else if (g.type === "MultiPolygon") {
-			for (const poly of g.coordinates) {
-				for (let r = 0; r < poly.length; r++) {
-					const [a, x, y] = ringCentroid(poly[r]);
-					const sign = r === 0 ? 1 : -1;
-					sumArea += sign * a;
-					cx += sign * x;
-					cy += sign * y;
-				}
-			}
+			for (const poly of g.coordinates) addPolygon(poly);
 		} else if (g.type === "LineString") {
 			for (const c of g.coordinates) {
 				lineLat += c[1];
@@ -191,6 +190,10 @@ async function main() {
 		`${PANEL_BASE}/servers-open`,
 		"servers.json",
 	);
+	// Requests that failed. The catalogs are only written from complete data:
+	// a missing shape would drop a station, and a missing server could mark
+	// a dispatchable station as unplayable.
+	const failures = [];
 	const liveStations = new Set(); // normalized names currently dispatchable somewhere
 	for (const server of serversResp.data.filter((s) => s.IsActive)) {
 		try {
@@ -201,7 +204,9 @@ async function main() {
 			for (const s of resp.data || []) {
 				if (s.Name) liveStations.add(normalizeName(s.Name));
 			}
-		} catch {}
+		} catch (err) {
+			failures.push(`server ${server.ServerCode}: ${err.message}`);
+		}
 	}
 	console.log(`Live dispatch stations across servers: ${liveStations.size}`);
 
@@ -238,7 +243,9 @@ async function main() {
 			const gj = await cachedFetchJson(WIKI_BASE + url, cacheName);
 			const c = stationCentroid(gj);
 			if (c) centroids.set(norm, c);
-		} catch {}
+		} catch (err) {
+			failures.push(`shape ${url}: ${err.message}`);
+		}
 	});
 	console.log(`Station centroids computed: ${centroids.size}`);
 
@@ -273,6 +280,14 @@ async function main() {
 	console.log(`\nRemote stations: ${remoteOut.length}`);
 	console.log(`Unplayable stations: ${unplayableOut.length}`);
 
+	if (failures.length > 0) {
+		console.error(
+			`\n${failures.length} request(s) failed — not writing the catalogs:`,
+		);
+		for (const f of failures) console.error(`  - ${f}`);
+		process.exitCode = 1;
+		return;
+	}
 	if (dry) {
 		console.log("(dry run — no files written)");
 		return;

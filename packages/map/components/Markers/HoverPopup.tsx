@@ -40,24 +40,22 @@ const placePopupInsideMap = (popup: L.Popup) => {
 	const spaceAbove = point.y + anchor.y - POPUP_TIP_HEIGHT - height;
 	const spaceBelow =
 		mapSize.y - (point.y - anchor.y + POPUP_TIP_HEIGHT + height);
-	const placeBelow =
-		spaceAbove < POPUP_EDGE_PADDING && spaceBelow > spaceAbove;
+	const placeBelow = spaceAbove < POPUP_EDGE_PADDING && spaceBelow > spaceAbove;
 
 	const minShift = POPUP_EDGE_PADDING - (point.x - width / 2);
 	const maxShift = mapSize.x - POPUP_EDGE_PADDING - (point.x + width / 2);
 	// Prefer the left edge when the popup is wider than the map.
 	const fitShift =
 		minShift > maxShift ? minShift : Math.min(Math.max(0, minShift), maxShift);
+	const shiftX = Math.round(fitShift);
+	// The tip stays over the anchor unless that would put it past the body's
+	// rounded corners (anchor right at the map edge); then it stops there.
 	const maxTipShift = Math.max(0, width / 2 - POPUP_TIP_INSET);
-	const shiftX = Math.round(
-		Math.min(Math.max(fitShift, -maxTipShift), maxTipShift),
-	);
-	const shiftY = placeBelow
-		? -2 * anchor.y + 2 * POPUP_TIP_HEIGHT + height
-		: 0;
+	const tipShift = Math.min(Math.max(shiftX, -maxTipShift), maxTipShift);
+	const shiftY = placeBelow ? -2 * anchor.y + 2 * POPUP_TIP_HEIGHT + height : 0;
 
 	container.classList.toggle("popup-below", placeBelow);
-	if (tipContainer) tipContainer.style.marginLeft = `${-20 - shiftX}px`;
+	if (tipContainer) tipContainer.style.marginLeft = `${-20 - tipShift}px`;
 
 	const current = L.point(popup.options.offset ?? [0, 0]);
 	if (current.x === shiftX && current.y === shiftY) return;
@@ -74,18 +72,25 @@ const HoverPopup = (props: PopupProps) => {
 		if (!popup) return;
 
 		let observer: ResizeObserver | null = null;
+		let map: L.Map | null = null;
+		const place = () => placePopupInsideMap(popup);
 		const onAdd = () => {
 			const wrapper = popup
 				.getElement()
 				?.querySelector(".leaflet-popup-content-wrapper");
 			if (!wrapper) return;
 			// Also fires once the content renders or changes size (e.g. images).
-			observer = new ResizeObserver(() => placePopupInsideMap(popup));
+			observer = new ResizeObserver(place);
 			observer.observe(wrapper);
+			// The anchor moves within the map when it's panned, zoomed or resized.
+			map = (popup as unknown as PopupInternals)._map ?? null;
+			map?.on("resize moveend zoomend", place);
 		};
 		const onRemove = () => {
 			observer?.disconnect();
 			observer = null;
+			map?.off("resize moveend zoomend", place);
+			map = null;
 		};
 
 		popup.on("add", onAdd);

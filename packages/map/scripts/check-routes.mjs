@@ -38,7 +38,12 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CACHE_DIR = path.join(__dirname, ".cache");
-const RAIL_DATA_PATH = path.join(__dirname, "..", "components", "railData.json");
+const RAIL_DATA_PATH = path.join(
+	__dirname,
+	"..",
+	"components",
+	"railData.json",
+);
 const TRAIN_ROUTE_PATH = path.join(__dirname, "..", "lib", "trainRoute.ts");
 
 const JUMP_MIN_KM = 0.1;
@@ -97,7 +102,9 @@ export async function checkRoutes({ log = console.log } = {}) {
 		}
 		return `${best} (${Math.round(bestKm * 1000)}m)`;
 	};
-	const stationAt = new Map(Object.entries(railData.stations).map(([n, c]) => [c.join(), n]));
+	const stationAt = new Map(
+		Object.entries(railData.stations).map(([n, c]) => [c.join(), n]),
+	);
 
 	let routes = 0;
 	let drawnKm = 0;
@@ -110,7 +117,10 @@ export async function checkRoutes({ log = console.log } = {}) {
 	};
 
 	for (const { trainNo } of timetables) {
-		const segments = await getTrainRoute({ ServerCode: "check", TrainNoLocal: trainNo });
+		const segments = await getTrainRoute({
+			ServerCode: "check",
+			TrainNoLocal: trainNo,
+		});
 		if (!segments) continue;
 		routes++;
 		for (const { color, points } of segments) {
@@ -124,25 +134,43 @@ export async function checkRoutes({ log = console.log } = {}) {
 					let off = 0;
 					for (let s = 1; s < samples; s++) {
 						const t = s / samples;
-						if (!onTrack([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t])) off++;
+						if (!onTrack([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]))
+							off++;
 					}
 					// One stray sample can be a curve cut by simplification.
-					if (off > 1) note(jumps, `${nearestStation(a)} → ${nearestStation(b)}`, trainNo, { km });
+					if (off > 1)
+						note(
+							jumps,
+							`${nearestStation(a)} → ${nearestStation(b)}`,
+							trainNo,
+							{ km },
+						);
 				}
 				const c = points[i + 1];
 				if (!c) continue;
 				const v1 = [b[0] - a[0], b[1] - a[1]];
 				const v2 = [c[0] - b[0], c[1] - b[1]];
-				const cos = (v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(...v1) * Math.hypot(...v2));
-				if (cos < HAIRPIN_COS && km > HAIRPIN_MIN_ARM_KM && haversineKm(b, c) > HAIRPIN_MIN_ARM_KM) {
+				const cos =
+					(v1[0] * v2[0] + v1[1] * v2[1]) /
+					(Math.hypot(...v1) * Math.hypot(...v2));
+				if (
+					cos < HAIRPIN_COS &&
+					km > HAIRPIN_MIN_ARM_KM &&
+					haversineKm(b, c) > HAIRPIN_MIN_ARM_KM
+				) {
 					note(hairpins, `near ${nearestStation(b)}`, trainNo);
 				}
 			}
 			if (color === "grey") {
 				const [a, b] = [points[0], points[points.length - 1]];
-				note(greys, `${stationAt.get(a.join()) ?? a} → ${stationAt.get(b.join()) ?? b}`, trainNo, {
-					km: haversineKm(a, b),
-				});
+				note(
+					greys,
+					`${stationAt.get(a.join()) ?? a} → ${stationAt.get(b.join()) ?? b}`,
+					trainNo,
+					{
+						km: haversineKm(a, b),
+					},
+				);
 			}
 		}
 	}
@@ -150,22 +178,37 @@ export async function checkRoutes({ log = console.log } = {}) {
 	const report = (title, map, describe) => {
 		const total = [...map.values()].reduce((n, v) => n + v.trains.length, 0);
 		log(`  ${title}: ${total} in ${map.size} places`);
-		const worst = [...map].sort((a, b) => b[1].trains.length - a[1].trains.length);
+		const worst = [...map].sort(
+			(a, b) => b[1].trains.length - a[1].trains.length,
+		);
 		for (const [where, v] of worst.slice(0, MAX_EXAMPLES)) {
-			log(`    - ${where}${describe ? describe(v) : ""}: ${v.trains.length} trains (e.g. ${v.trains[0]})`);
+			log(
+				`    - ${where}${describe ? describe(v) : ""}: ${v.trains.length} trains (e.g. ${v.trains[0]})`,
+			);
 		}
 	};
-	log(`  Routes drawn: ${routes}/${timetables.length}, ${Math.round(drawnKm)} km`);
+	log(
+		`  Routes drawn: ${routes}/${timetables.length}, ${Math.round(drawnKm)} km`,
+	);
 	report("Off-track jumps", jumps, (v) => ` [${Math.round(v.km * 1000)}m]`);
 	report("Hairpins", hairpins);
 	report("Grey lines (no track data)", greys, (v) => ` [${v.km.toFixed(1)}km]`);
 
 	const ok = jumps.size === 0 && hairpins.size === 0;
 	log(ok ? "  Route check passed" : "  Route check FAILED");
-	return { ok, routes, jumps: jumps.size, hairpins: hairpins.size, greys: greys.size };
+	return {
+		ok,
+		routes,
+		jumps: jumps.size,
+		hairpins: hairpins.size,
+		greys: greys.size,
+	};
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (
+	process.argv[1] &&
+	path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
 	const { ok } = await checkRoutes();
 	process.exit(ok ? 0 : 1);
 }
