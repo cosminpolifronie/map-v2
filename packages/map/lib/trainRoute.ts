@@ -178,6 +178,12 @@ async function computeRoute(train: {
 				prevConnected = false;
 				continue;
 			}
+			// Skip grey lines at the end of the route — there's nothing
+			// after them to connect to, so they just dangle.
+			if (i === effective.length - 2) {
+				prevConnected = false;
+				continue;
+			}
 			segments.push({ color: "grey", points: [a.coord, b.coord] });
 			prevConnected = false;
 			continue;
