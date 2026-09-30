@@ -38,6 +38,7 @@ import { TrainsList } from "@/components/TrainsList";
 
 import { useSelectedTrain } from "../contexts/SelectedTrainContext";
 import { StationMarker } from "./Markers/StationMarker";
+import PlayableArea from "./PlayableArea";
 import SelectedTrainPopup from "./SelectedTrainPopup";
 import { MainlineSignals, OtherSignals } from "./Signals";
 import SneakpeekMarkers from "./Sneakpeeks";
@@ -563,6 +564,15 @@ const LeaftletMap = ({ serverId }: MapProps) => {
 								url="https://{s}.tiles.openrailwaymap.org/maxspeed/{z}/{x}/{y}.png"
 								// Looks a bit wired in dark mode due to .css putting everything in a greyscale but it is still possible to differ the signalling systems.
 							/>
+						</LayerGroup>
+					</LayersControl.Overlay>
+
+					<LayersControl.Overlay
+						checked={localStorage.getItem("layer-playable area") === "true"}
+						name="Playable area"
+					>
+						<LayerGroup>
+							<PlayableArea />
 						</LayerGroup>
 					</LayersControl.Overlay>
 

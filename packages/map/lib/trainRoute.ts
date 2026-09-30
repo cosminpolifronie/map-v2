@@ -26,6 +26,13 @@ interface RailData {
 	>;
 }
 
+/** Map colours of route pieces, shared with the Playable area layer. */
+export const ROUTE_COLORS = {
+	green: "#2ecc71",
+	red: "#e74c3c",
+	grey: "#888888",
+} as const;
+
 const COLOR_NAMES = ["green", "red", "grey"] as const;
 
 /** Colour of each stretch between consecutive points, from colour runs. */
@@ -50,7 +57,7 @@ function normalizeName(name: string): string {
 	return name.normalize("NFC").trim().replace(/\s+/g, " ").toLowerCase();
 }
 
-function decodePolyline(str: string): RoutePoint[] {
+export function decodePolyline(str: string): RoutePoint[] {
 	let idx = 0;
 	let lat = 0;
 	let lon = 0;

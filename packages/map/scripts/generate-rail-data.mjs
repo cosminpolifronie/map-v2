@@ -7,7 +7,7 @@
  *   pnpm generate:rail-data            # uses scripts/.cache where present
  *   pnpm generate:rail-data --refresh  # re-downloads everything
  *
- * Output: components/railData.json
+ * Output: components/railData.json, components/playableArea.json
  *
  * ── Inputs ────────────────────────────────────────────────────────────────
  *   - SimRail wiki map (wiki.simrail.eu/map): one GeoJSON per railway line
@@ -49,7 +49,9 @@
  *      switch between side-by-side lines. The result is stored only where it
  *      differs from plain concatenation.
  *   6. Write railData.json; stations are placed on their busiest line.
- *   7. Draw every timetable's route with the app's code and check it for
+ *   7. Write playableArea.json: every track of every wiki line, for the
+ *      map's "Playable area" layer.
+ *   8. Draw every timetable's route with the app's code and check it for
  *      off-track jumps and hairpins (check-routes.mjs). Exits with code 1 if
  *      the check fails.
  *
@@ -63,6 +65,11 @@
  *                  the p→s leg, points to drop from the start of the s→n
  *                  leg], points: encoded polyline p-side → n-side,
  *                  colors: colour runs of points, as in segmentColors }
+ *
+ * ── Output (playableArea.json) ────────────────────────────────────────────
+ *   lines          line number → { title, subtitle?, lkname?, link?,
+ *                  available: encoded polylines (one per track),
+ *                  unavailable: encoded polylines }
  *
  * ── Reading the log ───────────────────────────────────────────────────────
  *   "off the wiki network"  legs over lines the wiki lacks — expected; the
@@ -108,6 +115,12 @@ const OXFMT = path.join(
 	"node_modules",
 	".bin",
 	"oxfmt",
+);
+const PLAYABLE_AREA_PATH = path.join(
+	__dirname,
+	"..",
+	"components",
+	"playableArea.json",
 );
 
 const OFFICIAL_TIMETABLE_BASE =
@@ -337,6 +350,7 @@ async function main() {
 		);
 
 		return {
+			wikiMapData,
 			stationCoords,
 			knownStations,
 			routeWays,
@@ -406,8 +420,13 @@ async function main() {
 		log(`  [timetables] Community EDR: ${all.length} timetables`);
 	})();
 
-	const { stationCoords, knownStations, routeWays, wikiLoopCentroids } =
-		await wikiPromise;
+	const {
+		wikiMapData,
+		stationCoords,
+		knownStations,
+		routeWays,
+		wikiLoopCentroids,
+	} = await wikiPromise;
 	await timetablesPromise;
 
 	log("Step 1b: Supplement station coordinates from local files + API");
@@ -826,7 +845,36 @@ async function main() {
 		`  Written ${OUTPUT_PATH} (${(fs.statSync(OUTPUT_PATH).size / 1024).toFixed(0)} KB)`,
 	);
 
-	log("Step 7: Check the routes (scripts/check-routes.mjs)");
+	log("Step 7: Write the playable area");
+	// Every track of every wiki line, for the map's "Playable area" layer.
+	// Parallel tracks of a line are kept (they overlap at map scale), so the
+	// layer shows exactly what the wiki shows, split by availability.
+	const lines = {};
+	for (const route of wikiMapData.routes) {
+		const lk = parseWikiRoute(route);
+		if (!lk) continue;
+		// The available and unavailable parts of a line are separate wiki
+		// entries; merge their info (e.g. LK1's "Wiedenka" is only on one).
+		const info = (lines[lk.line] ??= { available: [], unavailable: [] });
+		for (const field of ["title", "subtitle", "lkname", "link"]) {
+			if (route[field] && !info[field]) info[field] = route[field];
+		}
+	}
+	for (const way of routeWays) {
+		const kept = simplifyIndices(way.coords, SIMPLIFY_KM).map(
+			(i) => way.coords[i],
+		);
+		lines[way.line][way.available ? "available" : "unavailable"].push(
+			encodePolyline(kept),
+		);
+	}
+	fs.writeFileSync(PLAYABLE_AREA_PATH, JSON.stringify({ lines }));
+	execFileSync(OXFMT, [PLAYABLE_AREA_PATH], { stdio: "ignore" });
+	log(
+		`  Written ${PLAYABLE_AREA_PATH} (${Object.keys(lines).length} lines, ${(fs.statSync(PLAYABLE_AREA_PATH).size / 1024).toFixed(0)} KB)`,
+	);
+
+	log("Step 8: Check the routes (scripts/check-routes.mjs)");
 	const { ok } = await checkRoutes({ log });
 	if (!ok) process.exitCode = 1;
 	log(`Done in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
