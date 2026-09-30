@@ -336,6 +336,11 @@ html[data-mantine-color-scheme="light"] .leaflet-popup-close-button:hover {
   overflow: hidden;
 }
 
+/* Toggled by the "Hide layers menu" button (Map.tsx). */
+.leaflet-container[data-layers-menu-hidden] .leaflet-control-layers {
+  display: none;
+}
+
 .leaflet-control-layers-expanded {
   padding: 10px 12px !important;
   color: #d8dde4 !important;

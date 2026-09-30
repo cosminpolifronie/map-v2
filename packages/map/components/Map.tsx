@@ -13,6 +13,8 @@ import "leaflet/dist/leaflet.css";
 import {
 	MdFullscreen,
 	MdFullscreenExit,
+	MdLayers,
+	MdLayersClear,
 	MdOutlineTraffic,
 	MdSatellite,
 	MdSatelliteAlt,
@@ -105,6 +107,11 @@ const LeaftletMap = ({ serverId }: MapProps) => {
 		key: "isSatellite",
 		defaultValue: false,
 	});
+
+	const [showLayersMenu, setShowLayersMenu] = useLocalStorage({
+		key: "showLayersMenu",
+		defaultValue: true,
+	});
 	const {
 		selectedTrain,
 		setSelectedTrain,
@@ -121,6 +128,16 @@ const LeaftletMap = ({ serverId }: MapProps) => {
 	const RenderPopupIcon =
 		renderPopup === true ? MdSpeakerNotes : MdSpeakerNotesOff;
 	const SatelliteIcon = isSatellite === true ? MdSatellite : MdSatelliteAlt;
+	const LayersMenuIcon = showLayersMenu === true ? MdLayers : MdLayersClear;
+
+	// The layers menu is hidden with CSS rather than unmounted: unmounting
+	// LayersControl would also remove every layer it controls from the map.
+	useEffect(() => {
+		if (!map) return;
+		const container = map.getContainer();
+		if (showLayersMenu) delete container.dataset.layersMenuHidden;
+		else container.dataset.layersMenuHidden = "";
+	}, [map, showLayersMenu]);
 
 	const [stations, setStations] = useState<Station[] | null>(null);
 	const [stoppedTrainsSince, setStoppedTrainsSince] = useState<
@@ -413,6 +430,21 @@ const LeaftletMap = ({ serverId }: MapProps) => {
 								aria-pressed={isSatellite}
 							>
 								<SatelliteIcon size={24} />
+							</button>
+						</Tooltip>
+
+						<Tooltip
+							label={`${showLayersMenu ? "Hide" : "Show"} layers menu`}
+							position="right"
+						>
+							<button
+								type="button"
+								className={style.icon}
+								onClick={() => setShowLayersMenu((prev) => !prev)}
+								aria-label={`${showLayersMenu ? "Hide" : "Show"} layers menu`}
+								aria-pressed={showLayersMenu}
+							>
+								<LayersMenuIcon size={24} />
 							</button>
 						</Tooltip>
 
