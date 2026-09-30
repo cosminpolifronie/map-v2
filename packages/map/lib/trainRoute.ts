@@ -111,6 +111,7 @@ interface ResolvedStop {
 	coord: RoutePoint;
 	name: string;
 	isKnown: boolean;
+	line: number;
 }
 
 const routeCache = new Map<string, Promise<ColoredSegment[] | null>>();
@@ -141,6 +142,7 @@ async function computeRoute(train: {
 			coord: [coordArr[0], coordArr[1]],
 			name: norm,
 			isKnown: knownSet.has(norm),
+			line: stop.line ?? 0,
 		});
 	}
 
@@ -168,6 +170,14 @@ async function computeRoute(train: {
 		const encoded = railData.segments[key];
 
 		if (!encoded) {
+			// Skip grey lines when either stop has line 0 (off the drivable
+			// network). These stations often have wrong wiki coordinates
+			// (e.g. Koło is misplaced near Łęczyca), creating misleading
+			// long grey lines.
+			if (a.line === 0 || b.line === 0) {
+				prevConnected = false;
+				continue;
+			}
 			segments.push({ color: "grey", points: [a.coord, b.coord] });
 			prevConnected = false;
 			continue;
