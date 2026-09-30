@@ -178,9 +178,9 @@ async function computeRoute(train: {
 				prevConnected = false;
 				continue;
 			}
-			// Skip grey lines at the end of the route — there's nothing
-			// after them to connect to, so they just dangle.
-			if (i === effective.length - 2) {
+			// Skip grey lines at the beginning or end of the route —
+			// there's nothing to connect to, so they just dangle.
+			if (i === 0 || i === effective.length - 2) {
 				prevConnected = false;
 				continue;
 			}
