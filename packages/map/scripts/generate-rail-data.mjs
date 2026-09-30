@@ -450,11 +450,15 @@ async function main() {
 						key,
 						from: fromName,
 						to: name,
+						line: line > 0 ? String(line) : null,
+						toLine: toLine > 0 ? String(toLine) : null,
 						allLines: [...allLines],
 						label: `${fromName} → ${name}`,
 					});
 				} else {
 					const existing = segments.get(key);
+					if (line > 0 && !existing.line) existing.line = String(line);
+					if (toLine > 0 && !existing.toLine) existing.toLine = String(toLine);
 					for (const l of allLines) {
 						if (!existing.allLines.includes(l)) {
 							existing.allLines.push(l);
@@ -581,8 +585,34 @@ async function main() {
 
 	function tryRoute(seg, graph, router) {
 		const [aName, bName] = seg.key.split("|");
-		const fromIdx = nodeIndexFor(graph, canonicalNodes.get(aName));
-		const toIdx = nodeIndexFor(graph, canonicalNodes.get(bName));
+
+		// Snap the endpoints using the segment's own line hints when possible.
+		// The canonical (per-station) node picks the globally nearest track,
+		// which is wrong at stations between parallel lines (e.g. Sosnowiec
+		// Maczki sits between LK133 and LK163: the canonical node is on LK133,
+		// so a segment departing on line 163 would hairpin down LK133 to a
+		// false connector). Snapping per segment with its line hints puts the
+		// endpoint on the right track. Falls back to the canonical node.
+		const segSnap = (name, hintLines) => {
+			const anchor = stationCoords.get(name);
+			if (!anchor) return null;
+			if (hintLines && hintLines.length > 0) {
+				const allowed = new Set(hintLines);
+				const s = nearestAvail(anchor, allowed);
+				if (s.index >= 0 && s.distKm <= SNAP_MAX_KM) {
+					const idx = nodeIndexFor(graphAvail, graphAvail.coords[s.index]);
+					if (idx >= 0) return idx;
+				}
+			}
+			return nodeIndexFor(graph, canonicalNodes.get(name));
+		};
+
+		const fromIdx = segSnap(aName, seg.line ? [seg.line] : null) ?? -1;
+		// The to-station hint is the from-stop's line — the line the train is
+		// running on when it ARRIVES at the to-stop. seg.toLine is the
+		// departure line AFTER the to-stop (irrelevant for this segment; a
+		// train can arrive at Zawodzie on LK1 but depart on LK656).
+		const toIdx = segSnap(bName, seg.line ? [seg.line] : null) ?? -1;
 		if (fromIdx < 0 || toIdx < 0) return null;
 
 		const lines = seg.allLines;
