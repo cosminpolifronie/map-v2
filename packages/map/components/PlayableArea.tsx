@@ -28,7 +28,7 @@ interface LinePart {
 	paths: RoutePoint[][];
 }
 
-// Highlight colours for the lines under the cursor, hovered line first.
+// Highlight colours for the lines under the cursor, in line-number order.
 // None is green or red, so they can't be mistaken for availability.
 const HIGHLIGHT_COLORS = [
 	"#3388ff",
@@ -44,18 +44,49 @@ const NEARBY_PX = 8;
 // wait this long before treating a mouseout as leaving the line.
 const LEAVE_DELAY_MS = 60;
 
+// Dash length of the secondary highlighted lines, in pixels.
+const DASH_PX = 12;
+
 // Shared style objects: react-leaflet only restyles a layer when its
 // pathOptions object changes, so hovering restyles just the lines involved.
+// Leaflet merges styles, so every style sets the dash and cap explicitly.
+const baseStyle = (color: string): L.PathOptions => ({
+	color,
+	weight: 4,
+	opacity: 0.85,
+	dashArray: undefined,
+	lineCap: "round",
+});
 const STYLES = {
-	available: { color: ROUTE_COLORS.green, weight: 4, opacity: 0.85 },
-	unavailable: { color: ROUTE_COLORS.red, weight: 4, opacity: 0.85 },
-	highlighted: HIGHLIGHT_COLORS.map((color) => ({
-		color,
-		weight: 6,
-		opacity: 0.95,
-	})),
+	available: baseStyle(ROUTE_COLORS.green),
+	unavailable: baseStyle(ROUTE_COLORS.red),
 };
 const highlightIndex = (i: number) => i % HIGHLIGHT_COLORS.length;
+
+/**
+ * Style of the i-th highlighted line (in line-number order). The first is
+ * solid; each further line is drawn above it with sparser dashes (covering
+ * 1/2, 1/3, 1/4… of its length), so where lines share track every colour
+ * shows through. Lines come from different OSM ways, so their dashes can't
+ * be aligned; the widening gaps work whatever the phase. Under everything,
+ * each dashed line also has a solid copy (underlayStyle), so where it runs
+ * alone its gaps are filled rather than showing the map.
+ */
+const highlightStyles: L.PathOptions[] = [];
+const highlightStyle = (i: number) =>
+	(highlightStyles[i] ??= {
+		color: HIGHLIGHT_COLORS[highlightIndex(i)],
+		weight: 6,
+		opacity: 0.95,
+		dashArray: i === 0 ? undefined : `${DASH_PX} ${DASH_PX * i}`,
+		lineCap: i === 0 ? "round" : "butt",
+	});
+const underlayStyles: L.PathOptions[] = [];
+const underlayStyle = (i: number) =>
+	(underlayStyles[i] ??= {
+		...highlightStyle(0),
+		color: highlightStyle(i).color,
+	});
 
 const escapeHtml = (text: string) =>
 	text.replace(
@@ -73,9 +104,9 @@ const sameLines = (a: string[], b: string[]) =>
 /**
  * "Playable area" map layer: every railway line on the SimRail wiki map,
  * green where it's available in the game and red where it isn't. Hovering
- * gives the hovered line and every other line under the cursor a colour of
- * their own and lists them; clicking locks that highlight until the line or
- * the map background is clicked again.
+ * gives every line under the cursor a colour of its own and lists them;
+ * clicking locks that highlight until the same lines or the map background
+ * are clicked again.
  */
 const PlayableArea = () => {
 	const map = useMap();
@@ -83,7 +114,7 @@ const PlayableArea = () => {
 	const hidden = showTrainRoute && !!selectedTrain;
 
 	const [lines, setLines] = useState<Record<string, LineData> | null>(null);
-	// Lines under the cursor, the hovered one first; and a clicked group.
+	// Lines under the cursor, by line number; and a clicked group.
 	const [hoveredLines, setHoveredLines] = useState<string[]>([]);
 	const [lockedLines, setLockedLines] = useState<string[]>([]);
 	const highlighted = hoveredLines.length > 0 ? hoveredLines : lockedLines;
@@ -130,13 +161,19 @@ const PlayableArea = () => {
 			.filter((part) => part.paths.length > 0);
 	}, [lines]);
 
-	// Keep the highlighted lines above the others, the hovered one on top.
+	// Keep the highlighted lines above the others, from the bottom: the
+	// underlays of the dashed lines, the solid first line, the dashed lines.
 	useEffect(() => {
-		for (const line of [...highlighted].reverse()) {
-			for (const part of parts) {
-				if (part.line === line) layers.current.get(part.key)?.bringToFront();
+		const toFront = (keyOf: (part: LinePart) => string, lines: string[]) => {
+			for (const line of lines) {
+				for (const part of parts) {
+					if (part.line === line)
+						layers.current.get(keyOf(part))?.bringToFront();
+				}
 			}
-		}
+		};
+		toFront((part) => `${part.key}|underlay`, highlighted.slice(1));
+		toFront((part) => part.key, highlighted);
 	}, [highlighted, parts]);
 
 	/** Parts of every line passing within NEARBY_PX of the point. */
@@ -168,13 +205,19 @@ const PlayableArea = () => {
 		[map, parts],
 	);
 
-	/** Highlights and lists the lines at the cursor, `hovered` first. */
+	/**
+	 * Highlights and lists the lines at the cursor. They're sorted by line
+	 * number, not hovered-first: the cursor wobbling between two overlapping
+	 * lines must not reshuffle the list or the colours.
+	 */
 	const hoverAt = useCallback(
 		(latlng: L.LatLng, hovered: LinePart) => {
 			const near = partsNear(latlng).filter((p) => p.line !== hovered.line);
-			const listed = [hovered, ...near].filter(
-				(part, i, all) => all.findIndex((p) => p.line === part.line) === i,
-			);
+			const listed = [hovered, ...near]
+				.filter(
+					(part, i, all) => all.findIndex((p) => p.line === part.line) === i,
+				)
+				.sort((a, b) => byLineNumber(a.line, b.line));
 			const listedLines = listed.map((part) => part.line);
 			setHoveredLines((prev) =>
 				sameLines(prev, listedLines) ? prev : listedLines,
@@ -230,21 +273,32 @@ const PlayableArea = () => {
 
 	if (hidden) return null;
 
+	const setLayer = (key: string) => (layer: L.Polyline | null) => {
+		if (layer) layers.current.set(key, layer);
+		else layers.current.delete(key);
+	};
+
 	return (
 		<>
+			{parts
+				.filter((part) => highlighted.indexOf(part.line) > 0)
+				.map((part) => (
+					<Polyline
+						key={`${part.key}|underlay`}
+						ref={setLayer(`${part.key}|underlay`)}
+						positions={part.paths}
+						pathOptions={underlayStyle(highlighted.indexOf(part.line))}
+						interactive={false}
+					/>
+				))}
 			{parts.map((part) => (
 				<Polyline
 					key={part.key}
-					ref={(layer) => {
-						if (layer) layers.current.set(part.key, layer);
-						else layers.current.delete(part.key);
-					}}
+					ref={setLayer(part.key)}
 					positions={part.paths}
 					pathOptions={
 						highlighted.includes(part.line)
-							? STYLES.highlighted[
-									highlightIndex(highlighted.indexOf(part.line))
-								]
+							? highlightStyle(highlighted.indexOf(part.line))
 							: part.available
 								? STYLES.available
 								: STYLES.unavailable
@@ -261,9 +315,9 @@ const PlayableArea = () => {
 						},
 						click: (e) => {
 							L.DomEvent.stopPropagation(e);
-							// Lock what's highlighted; clicking the same line again releases it.
+							// Lock what's highlighted; clicking the same lines again releases them.
 							setLockedLines((prev) =>
-								prev[0] === part.line ? [] : hoveredLines,
+								sameLines(prev, hoveredLines) ? [] : hoveredLines,
 							);
 						},
 					}}
