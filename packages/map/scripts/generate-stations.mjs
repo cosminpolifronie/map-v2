@@ -5,7 +5,7 @@
  * SimRail wiki (source of truth — it gets constantly updated).
  *
  * Outputs:
- *   - components/stations.json        → "Unplayable dispatch stations" layer
+ *   - components/stations.json        → "Unplayable stations" layer
  *   - components/stationsRemote.json  → "Remote dispatch stations" layer
  *
  * Data flow:

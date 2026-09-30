@@ -511,12 +511,10 @@ const LeaftletMap = ({ serverId }: MapProps) => {
 
 					<LayersControl.Overlay
 						checked={
-							localStorage.getItem("layer-unplayable dispatch stations") ===
-								null ||
-							localStorage.getItem("layer-unplayable dispatch stations") ===
-								"true"
+							localStorage.getItem("layer-unplayable stations") === null ||
+							localStorage.getItem("layer-unplayable stations") === "true"
 						}
-						name="Unplayable dispatch stations"
+						name="Unplayable stations"
 					>
 						<LayerGroup>
 							<NonPlayableStations />
