@@ -6,17 +6,18 @@ import HoverPopup from "./HoverPopup";
 
 import styles from "../../styles/MarkerPopup.module.css";
 
+// Shared by every marker of this kind.
+const icon = L.icon({
+	iconUrl: "/markers/icon-station-passenger.png",
+	iconSize: [16, 16],
+	popupAnchor: [0, -16],
+});
+
 type StationMarkerProps = {
 	station: Station;
 };
 
 export const PassengerStationMarker = ({ station }: StationMarkerProps) => {
-	const icon = L.icon({
-		iconUrl: "/markers/icon-station-passenger.png",
-		iconSize: [16, 16],
-		popupAnchor: [0, -16],
-	});
-
 	return (
 		<Marker
 			key={station.id}
