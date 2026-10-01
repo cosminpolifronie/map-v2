@@ -1,5 +1,3 @@
-import railDataJson from "../components/railData.json";
-
 export type RoutePoint = [number, number];
 
 export interface ColoredSegment {
@@ -47,9 +45,22 @@ function stretchColors(
 	});
 }
 
-const railData = railDataJson as unknown as RailData;
-
-const knownSet = new Set(railData.knownStations);
+// The route data is only needed once a route is shown, so it's loaded on
+// demand rather than bundled with the map.
+let railDataRequest:
+	| Promise<{ railData: RailData; knownSet: Set<string> }>
+	| undefined;
+const loadRailData = () =>
+	(railDataRequest ??= import("../components/railData.json").then(
+		(module) => {
+			const railData = module.default as unknown as RailData;
+			return { railData, knownSet: new Set(railData.knownStations) };
+		},
+		(error: unknown) => {
+			railDataRequest = undefined; // retry on the next route
+			throw error;
+		},
+	));
 
 const EDR_TIMETABLE_URL = "https://simrail-edr.emeraldnetwork.xyz/train";
 
@@ -159,7 +170,10 @@ async function computeRoute(train: {
 	ServerCode: string;
 	TrainNoLocal: string;
 }): Promise<ColoredSegment[] | null> {
-	const stops = await fetchTimetable(train.ServerCode, train.TrainNoLocal);
+	const [stops, { railData, knownSet }] = await Promise.all([
+		fetchTimetable(train.ServerCode, train.TrainNoLocal),
+		loadRailData(),
+	]);
 	if (!stops || stops.length < 2) return null;
 
 	const resolved: ResolvedStop[] = [];

@@ -20,8 +20,8 @@
  *     data for them (e.g. lines missing from the wiki).
  *
  * The route code runs in Node (which strips the TypeScript types itself);
- * the only changes are the railData.json import, pointed at the file on
- * disk, and `fetch`, which serves the cached timetables.
+ * the only changes are the railData.json import, which reads the file from
+ * disk instead, and `fetch`, which serves the cached timetables.
  */
 
 import fs from "node:fs";
@@ -67,12 +67,19 @@ function loadTrackGraph() {
 }
 
 async function loadGetTrainRoute(timetables) {
-	const source = fs
-		.readFileSync(TRAIN_ROUTE_PATH, "utf8")
-		.replace(
-			/import railDataJson from "[^"]+";/,
-			`import fs from "node:fs";\nconst railDataJson = JSON.parse(fs.readFileSync(${JSON.stringify(RAIL_DATA_PATH)}, "utf8"));`,
+	// trainRoute.ts loads the route data with a dynamic import, which can't
+	// be resolved from the copy below; read the file from disk instead.
+	const railDataImport = /import\("[^"]*railData\.json"\)/;
+	const original = fs.readFileSync(TRAIN_ROUTE_PATH, "utf8");
+	if (!railDataImport.test(original)) {
+		throw new Error(
+			`check-routes: can't find the railData.json import in ${TRAIN_ROUTE_PATH}; update railDataImport`,
 		);
+	}
+	const source = `import fs from "node:fs";\n${original.replace(
+		railDataImport,
+		`Promise.resolve({ default: JSON.parse(fs.readFileSync(${JSON.stringify(RAIL_DATA_PATH)}, "utf8")) })`,
+	)}`;
 	const copy = path.join(CACHE_DIR, "trainRoute.check.mts");
 	fs.writeFileSync(copy, source);
 	const byTrainNo = new Map(timetables.map((t) => [t.trainNo, t.timetable]));
