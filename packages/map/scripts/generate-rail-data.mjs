@@ -61,7 +61,8 @@
  *                  available in the game], …]
  *   joins          "p|s|n" (p < n) → { cut: [points to drop from the end of
  *                  the p→s leg, points to drop from the start of the s→n
- *                  leg], points: encoded polyline p-side → n-side }
+ *                  leg], points: encoded polyline p-side → n-side,
+ *                  colors: colour runs of points, as in segmentColors }
  *
  * ── Reading the log ───────────────────────────────────────────────────────
  *   "off the wiki network"  legs over lines the wiki lacks — expected; the
@@ -761,7 +762,7 @@ async function main() {
 				if (!legsMeet) joinFailures++;
 				continue;
 			}
-			const { nodes } = simplifyPath(inLeg.nodes[cutIn], edgePath);
+			const { nodes, boundaries } = simplifyPath(inLeg.nodes[cutIn], edgePath);
 			const concatKm =
 				polylineKm(inLeg.nodes.slice(cutIn)) +
 				polylineKm(outLeg.nodes.slice(0, cutOut + 1));
@@ -770,6 +771,8 @@ async function main() {
 			joins[key] = {
 				cut: [inLeg.nodes.length - 1 - cutIn, cutOut],
 				points: encodeNodes(nodes),
+				// A join may cross track that isn't available in the game.
+				colors: boundaries,
 			};
 		}
 	}

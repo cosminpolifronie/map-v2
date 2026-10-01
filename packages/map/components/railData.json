@@ -1207,364 +1207,466 @@
 	"joins": {
 		"bełchów|skierniewice|radziwiłłów mazowiecki": {
 			"cut": [5, 3],
-			"points": "med|HiqzyB~@wMP{N[uN}@aKsU_mAiFa_@u`@upB"
+			"points": "med|HiqzyB~@wMP{N[uN}@aKsU_mAiFa_@u`@upB",
+			"colors": [[0, 0]]
 		},
 		"bełchów|łowicz główny|jackowice": {
 			"cut": [1, 4],
-			"points": "}_~|Hu}zxBqy@trAqCtDiK`KoG~Ea]xQ"
+			"points": "}_~|Hu}zxBqy@trAqCtDiK`KoG~Ea]xQ",
+			"colors": [[0, 0]]
 		},
 		"bełchów|łowicz przedmieście|domaniewice": {
 			"cut": [5, 1],
-			"points": "_i~|HiezxBJxDz@dHhOdv@rCzJpUdeB"
+			"points": "_i~|HiezxBJxDz@dHhOdv@rCzJpUdeB",
+			"colors": [[0, 0]]
 		},
 		"biała rawska|szeligi|marków": {
 			"cut": [1, 2],
-			"points": "wc~{Hwzy{BqOoFeqCgfAoPuHsa@_X"
+			"points": "wc~{Hwzy{BqOoFeqCgfAoPuHsa@_X",
+			"colors": [[0, 0]]
 		},
 		"borowa górka|bukowno|olkusz": {
 			"cut": [6, 3],
-			"points": "kaxqHkosuBuAwG}@{IwAkh@H_IlCsj@JoXYy]Bk["
+			"points": "kaxqHkosuBuAwG}@{IwAkh@H_IlCsj@JoXYy]Bk[",
+			"colors": [[0, 0]]
 		},
 		"borszewice|gajewniki|dionizów": {
 			"cut": [1, 6],
-			"points": "{s_zH}i|rB|@d}@B~Ma@jHi@zCaAhDoCdFgBhByO`K"
+			"points": "{s_zH}i|rB|@d}@B~Ma@jHi@zCaAhDoCdFgBhByO`K",
+			"colors": [[0, 0]]
 		},
 		"borszewice|gajewniki|zduńska wola karsznice": {
 			"cut": [1, 9],
-			"points": "{s_zH}i|rBp@|k@`@vNdAhJnBhHzCvFhCbC`DbBzFp@zGs@zDI"
+			"points": "{s_zH}i|rBp@|k@`@vNdAhJnBhHzCvFhCbC`DbBzFp@zGs@zDI",
+			"colors": [[0, 0]]
 		},
 		"brynów|katowice|katowice zawodzie": {
 			"cut": [4, 3],
-			"points": "azvqHgu_sBeAaNMmJ~E}wACy\\OaBOsH"
+			"points": "azvqHgu_sBeAaNMmJ~E}wACy\\OaBOsH",
+			"colors": [[0, 0]]
 		},
 		"będzin|sosnowiec główny|sosnowiec południowy": {
 			"cut": [1, 2],
-			"points": "{j|qH{eysBlIjSjk@byAvAfCxA|ArAp@dCT"
+			"points": "{j|qH{eysBlIjSjk@byAvAfCxA|ArAp@dCT",
+			"colors": [[0, 0]]
 		},
 		"charsznica|tunel|kozłów": {
 			"cut": [7, 7],
-			"points": "wrvrHof~xByBsIwCkG{D_F{E_DgDcAkD[k\\|AaEe@aFaBoTsKeEqC}C}DyBwEoWg}@"
+			"points": "wrvrHof~xByBsIwCkG{D_F{E_DgDcAkD[k\\|AaEe@aFaBoTsKeEqC}C}DyBwEoWg}@",
+			"colors": [[0, 0]]
 		},
-		"czarnca|knapówka|psary": { "cut": [2, 1], "points": "amcuH{spxBz_DpdC" },
+		"czarnca|knapówka|psary": {
+			"cut": [2, 1],
+			"points": "amcuH{spxBz_DpdC",
+			"colors": [[0, 0]]
+		},
 		"dionizów|zduńska wola|męka": {
 			"cut": [7, 2],
-			"points": "wa`zHgtxrB`EdBxAvA|AxBdChHbAvIv@|i@^xIfAfeA|BfbBFx_@"
+			"points": "wa`zHgtxrB`EdBxAvA|AxBdChHbAvIv@|i@^xIfAfeA|BfbBFx_@",
+			"colors": [[0, 0]]
 		},
 		"domaniewice|łowicz przedmieście|łowicz główny": {
 			"cut": [1, 6],
-			"points": "g{||HamtxBeUkcBcD}KgEaTeAwD_C}EmEoE"
+			"points": "g{||HamtxBeUkcBcD}KgEaTeAwD_C}EmEoE",
+			"colors": [[0, 0]]
 		},
 		"dorota|dąbrowa górnicza wschodnia|sławków": {
 			"cut": [6, 1],
-			"points": "yp_rHmhvtByCuF{BuHgAaHc@gJNo\\pB}fB[]|A}rA"
+			"points": "yp_rHmhvtByCuF{BuHgAaHc@gJNo\\pB}fB[]|A}rA",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza huta katowice|dąbrowa górnicza strzemieszyce|dąbrowa górnicza wschodnia": {
 			"cut": [6, 1],
-			"points": "}_crHmiotB|CiAtCkBnEgFnSoa@hDaJjBqHno@ugD"
+			"points": "}_crHmiotB|CiAtCkBnEgFnSoa@hDaJjBqHno@ugD",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza huta katowice|dąbrowa górnicza ząbkowice|łazy łc": {
 			"cut": [3, 2],
-			"points": "wfirHc~otBy]qIqNmFaHiD}U{PwSqPiJ}Fg_@kXgTeNiRqN"
+			"points": "wfirHc~otBy]qIqNmFaHiD}U{PwSqPiJ}Fg_@kXgTeNiRqN",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza południowa|dorota|juliusz": {
 			"cut": [2, 5],
-			"points": "}{|qHkjutBxGrCpTxNXQzOlKjDzAhLjDlCrA~DpDzD|G"
+			"points": "}{|qHkjutBxGrCpTxNXQzOlKjDzAhLjDlCrA~DpDzD|G",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza strzemieszyce|dąbrowa górnicza huta katowice|dąbrowa górnicza ząbkowice": {
 			"cut": [5, 3],
-			"points": "cidrH{totBe`@k]{CcBeDi@gDNmNzCyKdE_WfGoL|BeIdA"
+			"points": "cidrH{totBe`@k]{CcBeDi@gDNmNzCyKdE_WfGoL|BeIdA",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza strzemieszyce|dąbrowa górnicza wschodnia|kozioł": {
 			"cut": [2, 1],
-			"points": "}_`rHy`wtBv@yOhB{`B^[lCczB"
+			"points": "}_`rHy`wtBv@yOhB{`B^[lCczB",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza strzemieszyce|sosnowiec kazimierz|sosnowiec maczki": {
 			"cut": [2, 9],
-			"points": "oo~qH}emtBza@bq@xDvEfDxB~DlAhEXrDKjBe@lDgBnEwD|GgJzr@aeA"
+			"points": "oo~qH}emtBza@bq@xDvEfDxB~DlAhEXrDKjBe@lDgBnEwD|GgJzr@aeA",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza towarowa dta r5|kozioł|dąbrowa górnicza wschodnia": {
 			"cut": [7, 4],
-			"points": "mcbrHmhjuBxFAlFpAvE`D`CpCrBnD`BhElAzEvQtmAtBjJbBrEtBtD`S`X"
+			"points": "mcbrHmhjuBxFAlFpAvE`D`CpCrBnD`BhElAzEvQtmAtBjJbBrEtBtD`S`X",
+			"colors": [[0, 0]]
 		},
 		"dąbrowa górnicza wschodnia|dorota|sosnowiec maczki": {
 			"cut": [4, 1],
-			"points": "cb_rHk}utBfFx@PVdt@zK`FhAnFlBbHxD`gAft@"
+			"points": "cb_rHk}utBfFx@PVdt@zK`FhAnFlBbHxD`gAft@",
+			"colors": [[0, 0]]
 		},
 		"dąbrowice skierniewickie|skierniewice|puszcza mariańska": {
 			"cut": [6, 3],
-			"points": "coc|Hkk{yBiEgEiEiGaDsG_CkHcHk]UOkFwW_EmPin@acD"
+			"points": "coc|Hkk{yBiEgEiEiGaDsG_CkHcHk]UOkFwW_EmPin@acD",
+			"colors": [[0, 0]]
 		},
 		"dłubnia|kraków batowice|kraków przedmieście": {
 			"cut": [5, 2],
-			"points": "}nypHwcdyBoBd}ADtQv@jO|@lJ|AbJlCxKlE|PMn@~Q~q@lt@rkB"
+			"points": "}nypHwcdyBoBd}ADtQv@jO|@lJ|AbJlCxKlE|PMn@~Q~q@lt@rkB",
+			"colors": [
+				[0, 0],
+				[6, 1],
+				[8, 0]
+			]
 		},
 		"dłubnia|raciborowice|zastów": {
 			"cut": [4, 2],
-			"points": "{qypHapeyBsD}AiB{B{@kBkDsKuVwgAgBeJ_a@wdC"
+			"points": "{qypHapeyBsD}AiB{B{@kBkDsKuVwgAgBeJ_a@wdC",
+			"colors": [[0, 0]]
 		},
 		"florek|kutno|stara wieś": {
 			"cut": [1, 3],
-			"points": "}~y}HyrytB|q@abEbOco@pI{\\vCqIJF"
+			"points": "}~y}HyrytB|q@abEbOco@pI{\\vCqIJF",
+			"colors": [[0, 0]]
 		},
 		"gałkówek|koluszki|rogów": {
 			"cut": [5, 1],
-			"points": "k{wzHk||wBeD_EmDkCcf@yRes@aa@yKgHorEoiC"
+			"points": "k{wzHk||wBeD_EmDkCcf@yRes@aa@yKgHorEoiC",
+			"colors": [[0, 0]]
 		},
 		"gałkówek|żakowice południowe|koluszki": {
 			"cut": [6, 6],
-			"points": "g`vzHa}rwBsNs_Bm@uKQyKRwOx@eMlLq~@d@mMIiKqEsaAm@oGiAiFyBgFuCmDsCaB"
+			"points": "g`vzHa}rwBsNs_Bm@uKQyKRwOx@eMlLq~@d@mMIiKqEsaAm@oGiAiFyBgFuCmDsCaB",
+			"colors": [[0, 0]]
 		},
 		"gałkówek|żakowice południowe|słotwiny": {
 			"cut": [6, 4],
-			"points": "g`vzHa}rwBkN{}Aq@sKS_JDuMr@kOx@cIpJct@v@{MGuNqEgdA"
+			"points": "g`vzHa}rwBkN{}Aq@sKS_JDuMr@kOx@cIpJct@v@{MGuNqEgdA",
+			"colors": [[0, 0]]
 		},
 		"góra włodowska|zawiercie|łazy ła": {
 			"cut": [2, 1],
-			"points": "uscsH}npuB``AaFzP[r~@_E"
+			"points": "uscsH}npuB``AaFzP[r~@_E",
+			"colors": [[0, 0]]
 		},
 		"jackowice|łowicz główny|łowicz przedmieście": {
 			"cut": [4, 6],
-			"points": "}qa}Hm~vxBlZ}OlMoJbLcLhSg\\zCiDzB}@bCGfIvA`EjB"
+			"points": "}qa}Hm~vxBlZ}OlMoJbLcLhSg\\zCiDzB}@bCGfIvA`EjB",
+			"colors": [[0, 0]]
 		},
 		"jaktorów|grodzisk mazowiecki|milanówek": {
 			"cut": [2, 0],
-			"points": "}z_}Hibx|ByJ}b@Dm@mPos@"
+			"points": "}z_}Hibx|ByJ}b@Dm@mPos@",
+			"colors": [[0, 0]]
 		},
 		"juliusz|sosnowiec dańdówka|sosnowiec południowy": {
 			"cut": [3, 1],
-			"points": "kmxqHk}ctBeCfa@G~GpAjoAtCtqB"
+			"points": "kmxqHk}ctBeCfa@G~GpAjoAtCtqB",
+			"colors": [[0, 0]]
 		},
 		"justynów|gałkówek|żakowice południowe": {
 			"cut": [2, 5],
-			"points": "akvzHcjewBg@csBRk@k@ylBaC}aAAuJ\\iKbAqLxKer@"
+			"points": "akvzHcjewBg@csBRk@k@ylBaC}aAAuJ\\iKbAqLxKer@",
+			"colors": [[0, 0]]
 		},
 		"katowice janów|katowice much. kmb|staszic": {
 			"cut": [3, 5],
-			"points": "y|qqHyvesBhSfiBvJreAFjAnCtTnA|FxOj`@jBvCzBbB"
+			"points": "y|qqHyvesBhSfiBvJreAFjAnCtTnA|FxOj`@jBvCzBbB",
+			"colors": [
+				[0, 0],
+				[2, 1],
+				[3, 0]
+			]
 		},
 		"katowice janów|stawiska|mysłowice": {
 			"cut": [2, 5],
-			"points": "yyuqHmnrsBO?sEgJyAeBcKiFmCgCmA_C{@sC{@eI"
+			"points": "yyuqHmnrsBO?sEgJyAeBcKiFmCgCmA_C{@sC{@eI",
+			"colors": [[0, 0]]
 		},
 		"katowice much. kmb|staszic|katowice muchowiec staszic": {
 			"cut": [5, 6],
-			"points": "m}oqHu|}rBfBh@vBFlAQ`CcA~@y@~BiDnCuGjFuSbAsILeFOkGa@iE}@{E"
+			"points": "m}oqHu|}rBfBh@vBFlAQ`CcA~@y@~BiDnCuGjFuSbAsILeFOkGa@iE}@{E",
+			"colors": [[0, 0]]
 		},
 		"katowice zawodzie|sosnowiec południowy|sosnowiec dańdówka": {
 			"cut": [9, 2],
-			"points": "clxqHqgssBqm@ad@{AgBmAuC{@eFS}DBaCV{Ct@sCbAuB`BiCzZo_@jKmQ"
+			"points": "clxqHqgssBqm@ad@{AgBmAuC{@eFS}DBaCV{Ct@sCbAuB`BiCzZo_@jKmQ",
+			"colors": [[0, 0]]
 		},
 		"katowice|katowice zawodzie|mysłowice": {
 			"cut": [4, 3],
-			"points": "kyvqHgyesBuBgi@GgJfAil@zAs^pAwc@A{V"
+			"points": "kyvqHgyesBuBgi@GgJfAil@zAs^pAwc@A{V",
+			"colors": [[0, 0]]
 		},
 		"knapówka|psary|starzyny": {
 			"cut": [1, 3],
-			"points": "_lutHgjaxBprAb{E`BnEpEtH"
+			"points": "_lutHgjaxBprAb{E`BnEpEtH",
+			"colors": [[0, 0]]
 		},
 		"koluszki|gałkówek|łódź chojny": {
 			"cut": [4, 2],
-			"points": "qcvzHuaqwBmI|g@Fd@yApPUlKJ|LxBd}@pAdiF"
+			"points": "qcvzHuaqwBmI|g@Fd@yApPUlKJ|LxBd}@pAdiF",
+			"colors": [[0, 0]]
 		},
 		"koniecpol|starzyny|sprowa": {
 			"cut": [1, 2],
-			"points": "kzqtH}jywBbkFk|B"
+			"points": "kzqtH}jywBbkFk|B",
+			"colors": [[0, 0]]
 		},
 		"korytów|grodzisk mazowiecki|pruszków": {
 			"cut": [1, 1],
-			"points": "mj||Hynm|Bu~Bw`KaJw]{FsVsa@gjBgd@opB"
+			"points": "mj||Hynm|Bu~Bw`KaJw]{FsVsa@gjBgd@opB",
+			"colors": [[0, 0]]
 		},
 		"kozioł|dąbrowa górnicza towarowa dta r5|przemiarki": {
 			"cut": [6, 7],
-			"points": "ojbrH_fjuBsw@h`@iCbBqCnCwCvEiBrEeCvJoAlHyGfYgB|FgB~DoCrEuE`FoF`D}FzA"
+			"points": "ojbrH_fjuBsw@h`@iCbBqCnCwCvEiBrEeCvJoAlHyGfYgB|FgB~DoCrEuE`FoF`D}FzA",
+			"colors": [[0, 0]]
 		},
 		"kraków batowice|kraków przedmieście|kraków olsza": {
 			"cut": [2, 3],
-			"points": "{yupHc}wxBtH|F|HvEvKhFnCVnCy@"
+			"points": "{yupHc}wxBtH|F|HvEvKhFnCVnCy@",
+			"colors": [[0, 0]]
 		},
 		"kraków główny kga|kraków główny|kraków płaszów": {
 			"cut": [3, 2],
-			"points": "usspHy}uxB~K}NrCmCrLaGrG}ArD_@`kAwB"
+			"points": "usspHy}uxB~K}NrCmCrLaGrG}ArD_@`kAwB",
+			"colors": [[0, 0]]
 		},
 		"kraków przedmieście|kraków główny|kraków płaszów": {
 			"cut": [3, 2],
-			"points": "oqspH{nvxBfEKnUcK\\ZbJmBpmA_C"
+			"points": "oqspH{nvxBfEKnUcK\\ZbJmBpmA_C",
+			"colors": [[0, 0]]
 		},
 		"kraków przedmieście|kraków główny|kraków zabłocie": {
 			"cut": [3, 3],
-			"points": "oqspH{nvxBfEKnUcK\\ZbJmBdkAcCfGy@dFiB"
+			"points": "oqspH{nvxBfEKnUcK\\ZbJmBdkAcCfGy@dFiB",
+			"colors": [[0, 0]]
 		},
 		"krzewie|kutno|witonia": {
 			"cut": [1, 5],
-			"points": "eiz}H_fxtBv}@qoFdNkk@lDcLtFwT~Gy[lCsHhDyF"
+			"points": "eiz}H_fxtBv}@qoFdNkk@lDcLtFwT~Gy[lCsHhDyF",
+			"colors": [[0, 0]]
 		},
 		"mikołajów|słotwiny|rokiciny": {
 			"cut": [1, 6],
-			"points": "kctzHejcxBgq@fvAyGbOiIfX{@vEi@bFUlLbC~h@j@nH"
+			"points": "kctzHejcxBgq@fvAyGbOiIfX{@vEi@bFUlLbC~h@j@nH",
+			"colors": [[0, 0]]
 		},
 		"mikołajów|słotwiny|żakowice południowe": {
 			"cut": [1, 5],
-			"points": "kctzHejcxBgq@fvAiKrUiEhNmAxFaAfJQ|I"
+			"points": "kctzHejcxBgq@fvAiKrUiEhNmAxFaAfJQ|I",
+			"colors": [[0, 0]]
 		},
 		"mokra|skierniewice|skierniewice rawka": {
 			"cut": [5, 3],
-			"points": "gcd|H_c{yBJ}KOmJe@kI_AqHwTkiAiFa_@u`@upB"
+			"points": "gcd|H_c{yBJ}KOmJe@kI_AqHwTkiAiFa_@u`@upB",
+			"colors": [[0, 0]]
 		},
 		"męka|zduńska wola|zduńska wola karsznice": {
 			"cut": [2, 2],
-			"points": "mf_zHkvorBCi\\cAsaA@oFkDstC"
+			"points": "mf_zHkvorBCi\\cAsaA@oFkDstC",
+			"colors": [[0, 0]]
 		},
 		"olszamowice|włoszczowa północ|żelisławice": {
 			"cut": [1, 2],
-			"points": "kspuHyayxBtnEpfBb@RNf@xP~G|KxF"
+			"points": "kspuHyayxBtnEpfBb@RNf@xP~G|KxF",
+			"colors": [[0, 0]]
 		},
 		"opoczno południe|idzikowice|radzice": {
 			"cut": [1, 1],
-			"points": "ep}xHyszzBq_BmzCy_Bq|C"
+			"points": "ep}xHyszzBq_BmzCy_Bq|C",
+			"colors": [[0, 0]]
 		},
 		"ostrowy|kutno|stara wieś": {
 			"cut": [1, 3],
-			"points": "eyz}HqkvtBty@o`FZYzPicAtDyPzXeiA"
+			"points": "eyz}HqkvtBty@o`FZYzPicAtDyPzXeiA",
+			"colors": [[0, 0]]
 		},
 		"ostrowy|kutno|witonia": {
 			"cut": [1, 5],
-			"points": "eyz}HqkvtBty@o`FZYdRugAdNkk@lDcLtFwT~Gy[lCsHhDyF"
+			"points": "eyz}HqkvtBty@o`FZYdRugAdNkk@lDcLtFwT~Gy[lCsHhDyF",
+			"colors": [[0, 0]]
 		},
 		"przemiarki|łazy łc|łazy": {
 			"cut": [4, 4],
-			"points": "gvurHsoauBTaZ}Acc@Tg@qHgbBiAqLsBaL"
+			"points": "gvurHsoauBTaZ}Acc@Tg@qHgbBiAqLsBaL",
+			"colors": [[0, 0]]
 		},
 		"psary|starzyny|sprowa": {
 			"cut": [1, 2],
-			"points": "uoqtH_sywB`P_Gp\\iNfJyCpfDexA"
+			"points": "uoqtH_sywB`P_Gp\\iNfJyCpfDexA",
+			"colors": [[0, 0]]
 		},
 		"puszcza mariańska|skierniewice|płyćwia": {
 			"cut": [3, 6],
-			"points": "ikf|HayczBhn@`cD~DlPjFvWTNbHj]~BjHtDpHtDjFbF|E"
+			"points": "ikf|HayczBhn@`cD~DlPjFvWTNbHj]~BjHtDpHtDjFbF|E",
+			"colors": [[0, 0]]
 		},
 		"retkinia|łódź chojny|łódź widzew": {
 			"cut": [4, 8],
-			"points": "w|uzHml{uBhByV~D}w@TeM|Aw^@qKYwFs@{FcA_FmA}DsBsEcCmD}B_CoDwB"
+			"points": "w|uzHml{uBhByV~D}w@TeM|Aw^@qKYwFs@{FcA_FmA}DsBsEcCmD}B_CoDwB",
+			"colors": [[0, 0]]
 		},
 		"retkinia|łódź kaliska|łódź żabieniec": {
 			"cut": [4, 2],
-			"points": "a|zzHyfruBkLz@kFrAcTrIcf@xZqLjE"
+			"points": "a|zzHyfruBkLz@kFrAcTrIcf@xZqLjE",
+			"colors": [[0, 0]]
 		},
 		"rogów|koluszki|słotwiny": {
 			"cut": [1, 3],
-			"points": "sab{HkpcxBtdGtiDxr@~XtE~@fC@fDo@bC}A"
+			"points": "sab{HkpcxBtdGtiDxr@~XtE~@fC@fDo@bC}A",
+			"colors": [[0, 0]]
 		},
 		"rogów|koluszki|żakowice południowe": {
 			"cut": [1, 6],
-			"points": "sab{HkpcxBffGpjD|o@pWlK~CfC@xBc@xLyH`Cs@bCM"
+			"points": "sab{HkpcxBffGpjD|o@pWlK~CfC@xBc@xLyH`Cs@bCM",
+			"colors": [[0, 0]]
 		},
 		"sosnowiec kazimierz|sosnowiec dańdówka|stawiska": {
 			"cut": [3, 1],
-			"points": "smxqHk}ctB_Cr]OrKbBfaAtCx_C"
+			"points": "smxqHk}ctB_Cr]OrKbBfaAtCx_C",
+			"colors": [[0, 0]]
 		},
 		"sprowa|kozłów|tunel": {
 			"cut": [4, 3],
-			"points": "srdsH{udyBlHIdGf@xOhCvUfFRWdJrBhUnJfZdN"
+			"points": "srdsH{udyBlHIdGf@xOhCvUfFRWdJrBhUnJfZdN",
+			"colors": [[0, 0]]
 		},
 		"stare grudze|łowicz przedmieście|łowicz główny": {
 			"cut": [1, 6],
-			"points": "g{||HamtxBeUkcBcD}KgEaTeAwD_C}EmEoE"
+			"points": "g{||HamtxBeUkcBcD}KgEaTeAwD_C}EmEoE",
+			"colors": [[0, 0]]
 		},
 		"warszawa centralna|warszawa wschodnia|warszawa grochów": {
 			"cut": [6, 4],
-			"points": "ii{}Hyam_C}Gq@}Bs@_C}BkCsFuSeaAkHkUmLyd@sEkLm@kCg@iE"
+			"points": "ii{}Hyam_C}Gq@}Bs@_C}BkCsFuSeaAkHkUmLyd@sEkLm@kCg@iE",
+			"colors": [[0, 0]]
 		},
 		"warszawa centralna|warszawa wschodnia|warszawa praga wpt m": {
 			"cut": [6, 6],
-			"points": "ii{}Hyam_C}Gq@}Bs@qBiB_CqEwAaFwQy{@_HkTyC}KgAmCsAuBsHuG"
+			"points": "ii{}Hyam_C}Gq@}Bs@qBiB_CqEwAaFwQy{@_HkTyC}KgAmCsAuBsHuG",
+			"colors": [[0, 0]]
 		},
 		"warszawa centralna|warszawa zachodnia|warszawa włochy": {
 			"cut": [1, 3],
-			"points": "_jw}Hyrb_CxUf}AbEp\\lAxN|Fle@tFla@zBlMpFdU"
+			"points": "_jw}Hyrb_CxUf}AbEp\\lAxN|Fle@tFla@zBlMpFdU",
+			"colors": [[0, 0]]
 		},
 		"warszawa gołąbki|warszawa włochy|warszawa zachodnia": {
 			"cut": [6, 2],
-			"points": "ktr}Huyq~Be@aE{@wDqHwPsI}Y}Ik_@aS_~@WKcSs}@"
+			"points": "ktr}Huyq~Be@aE{@wDqHwPsI}Y}Ik_@aS_~@WKcSs}@",
+			"colors": [[0, 0]]
 		},
 		"warszawa grochów|warszawa wschodnia|warszawa stadion": {
 			"cut": [4, 4],
-			"points": "ks}}H_gr_Cf@hEx@nDfEfKlLxd@xF~PdTzbA|@tC\\C"
+			"points": "ks}}H_gr_Cf@hEx@nDfEfKlLxd@xF~PdTzbA|@tC\\C",
+			"colors": [[0, 0]]
 		},
 		"warszawa ochota|warszawa zachodnia|warszawa włochy": {
 			"cut": [0, 3],
-			"points": "wqv}Hco__C|CrXdAhM|Fle@tFla@zBlMpFdU"
+			"points": "wqv}Hco__C|CrXdAhM|Fle@tFla@zBlMpFdU",
+			"colors": [[0, 0]]
 		},
 		"warszawa ursus|warszawa włochy|warszawa zachodnia": {
 			"cut": [5, 2],
-			"points": "cur}Hebr~B{AwEkHmOcHgU_XclA_@E_ZsrA"
+			"points": "cur}Hebr~B{AwEkHmOcHgU_XclA_@E_ZsrA",
+			"colors": [[0, 0]]
 		},
 		"wągry|koluszki|żakowice": {
 			"cut": [1, 4],
-			"points": "ubb{HupcxBpsExiCxKfHho@r^~H|Dd_@xNxCnBxC`D"
+			"points": "ubb{HupcxBpsExiCxKfHho@r^~H|Dd_@xNxCnBxC`D",
+			"colors": [[0, 0]]
 		},
 		"wągry|koluszki|żakowice południowe": {
 			"cut": [1, 6],
-			"points": "ubb{HupcxBprEdiCvs@t`@|o@pWlK~CfC@xBc@xLyH`Cs@bCM"
+			"points": "ubb{HupcxBprEdiCvs@t`@|o@pWlK~CfC@xBc@xLyH`Cs@bCM",
+			"colors": [[0, 0]]
 		},
 		"zgierz jaracza|zgierz|łódź radogoszcz zachód": {
 			"cut": [1, 4],
-			"points": "stn{HizquBl|@lw@lUjT|DzB|DnAtDf@tEA"
+			"points": "stn{HizquBl|@lw@lUjT|DzB|DnAtDf@tEA",
+			"colors": [[0, 0]]
 		},
 		"zgierz północ|zgierz|łódź żabieniec": {
 			"cut": [1, 5],
-			"points": "usn{HoyquBn{@rv@lSvR|FnDrGfBhGPtf@_F"
+			"points": "usn{HoyquBn{@rv@lSvR|FnDrGfBhGPtf@_F",
+			"colors": [[0, 0]]
 		},
 		"zgierz rudunki|zgierz|łódź radogoszcz wschód": {
 			"cut": [1, 5],
-			"points": "ayo{Hs|ruBz`BvyAlCxA~Bl@hDNlEc@"
+			"points": "ayo{Hs|ruBz`BvyAlCxA~Bl@hDNlEc@",
+			"colors": [[0, 0]]
 		},
 		"łódź andrzejów szosa|łódź widzew|łódź niciarniana": {
 			"cut": [3, 1],
-			"points": "on{zHugpvBw]rnCaGvr@kTpoC"
+			"points": "on{zHugpvBw]rnCaGvr@kTpoC",
+			"colors": [[0, 0]]
 		},
 		"łódź andrzejów|gałkówek|żakowice południowe": {
 			"cut": [2, 5],
-			"points": "akvzHmhewBg@ytBRk@k@ylBaC}aAAuJ\\iKbAqLxKer@"
+			"points": "akvzHmhewBg@ytBRk@k@ylBaC}aAAuJ\\iKbAqLxKer@",
+			"colors": [[0, 0]]
 		},
 		"łódź andrzejów|łódź widzew|łódź chojny": {
 			"cut": [1, 7],
-			"points": "om|zHexkvBe\\lcEcAhVFjH\\nFjAhIvAhHzAbGhBnFrBnEbDhF"
+			"points": "om|zHexkvBe\\lcEcAhVFjH\\nFjAhIvAhHzAbGhBnFrBnEbDhF",
+			"colors": [[0, 0]]
 		},
 		"łódź andrzejów|łódź widzew|łódź marysin": {
 			"cut": [1, 3],
-			"points": "om|zHexkvByFzr@sC~VwL|{AaAlHcC`Imt@z|A"
+			"points": "om|zHexkvByFzr@sC~VwL|{AaAlHcC`Imt@z|A",
+			"colors": [[0, 0]]
 		},
 		"łódź andrzejów|łódź widzew|łódź stoki": {
 			"cut": [1, 2],
-			"points": "om|zHexkvByFzr@sC~V_Mn}Ay@zFsA~E"
+			"points": "om|zHexkvByFzr@sC~V_Mn}Ay@zFsA~E",
+			"colors": [[0, 0]]
 		},
 		"łódź andrzejów|łódź widzew|łódź zarzew": {
 			"cut": [1, 7],
-			"points": "om|zHexkvBe\\lcEaAlTJbLhA|KxD|QdBjFnBtE"
+			"points": "om|zHexkvBe\\lcEaAlTJbLhA|KxD|QdBjFnBtE",
+			"colors": [[0, 0]]
 		},
 		"łódź chojny|retkinia|łódź lublinek": {
 			"cut": [3, 1],
-			"points": "swyzHotquBhAbIrPhy@hBbMjjAh`G"
+			"points": "swyzHotquBhAbIrPhy@hBbMjjAh`G",
+			"colors": [[0, 0]]
 		},
 		"łódź chojny|łódź kaliska|łódź żabieniec": {
 			"cut": [3, 2],
-			"points": "y}yzH_}ruB_b@fHeEtA_RjJ{[fYeVdOqKvD"
+			"points": "y}yzH_}ruB_b@fHeEtA_RjJ{[fYeVdOqKvD",
+			"colors": [[0, 0]]
 		},
 		"łódź dąbrowa|łódź chojny|łódź pabianicka": {
 			"cut": [5, 4],
-			"points": "wtuzHqo`vBpAfGr@zF\\~H?rFcBla@UdM_E|w@iBxV"
+			"points": "wtuzHqo`vBpAfGr@zF\\~H?rFcBla@UdM_E|w@iBxV",
+			"colors": [[0, 0]]
 		},
 		"łódź kaliska|łódź chojny|łódź widzew": {
 			"cut": [4, 8],
-			"points": "{|uzHuj{uBlBqX~D}w@TeM|Aw^@qKYwFs@{FcA_FmA}DsBsEcCmD}B_CoDwB"
+			"points": "{|uzHuj{uBlBqX~D}w@TeM|Aw^@qKYwFs@{FcA_FmA}DsBsEcCmD}B_CoDwB",
+			"colors": [[0, 0]]
 		},
 		"łódź pabianicka|retkinia|łódź retkinia": {
 			"cut": [3, 0],
-			"points": "swyzHotquBhAbIrPhy@fChP"
+			"points": "swyzHotquBhAbIrPhy@fChP",
+			"colors": [[0, 0]]
 		},
 		"łódź pabianicka|łódź kaliska|łódź żabieniec": {
 			"cut": [3, 2],
-			"points": "y}yzH_}ruB_b@fHeEtA_RjJ{[fYeVdOqKvD"
+			"points": "y}yzH_}ruB_b@fHeEtA_RjJ{[fYeVdOqKvD",
+			"colors": [[0, 0]]
 		}
 	}
 }

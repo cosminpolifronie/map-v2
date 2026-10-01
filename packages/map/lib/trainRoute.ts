@@ -18,12 +18,27 @@ interface RailData {
 	 * Replacement for the joint between two legs "p|s|n" (p < n) where plain
 	 * concatenation would be wrong: drop `cut[0]` points from the end of the
 	 * p→s leg and `cut[1]` from the start of the s→n leg, and put `points`
-	 * (drawn p-side to n-side) in between.
+	 * (drawn p-side to n-side, colour runs in `colors`) in between.
 	 */
-	joins: Record<string, { cut: [number, number]; points: string }>;
+	joins: Record<
+		string,
+		{ cut: [number, number]; points: string; colors: [number, number][] }
+	>;
 }
 
 const COLOR_NAMES = ["green", "red", "grey"] as const;
+
+/** Colour of each stretch between consecutive points, from colour runs. */
+function stretchColors(
+	pointCount: number,
+	runs: [number, number][],
+): ColoredSegment["color"][] {
+	return Array.from({ length: Math.max(0, pointCount - 1) }, (_, p) => {
+		let code = runs[0][1];
+		for (const [start, c] of runs) if (start <= p) code = c;
+		return COLOR_NAMES[code] ?? "grey";
+	});
+}
 
 const railData = railDataJson as unknown as RailData;
 
@@ -215,12 +230,10 @@ async function computeRoute(train: {
 		}
 
 		let legPts = decodePolyline(encoded);
-		const boundaries = railData.segmentColors[key] ?? [[0, 0]];
-		let legColors = legPts.slice(1).map((_, p) => {
-			let code = boundaries[0][1];
-			for (const [start, c] of boundaries) if (start <= p) code = c;
-			return COLOR_NAMES[code] ?? "grey";
-		});
+		let legColors = stretchColors(
+			legPts.length,
+			railData.segmentColors[key] ?? [[0, 0]],
+		);
 		if (a.name > b.name) {
 			legPts.reverse();
 			legColors.reverse();
@@ -240,13 +253,13 @@ async function computeRoute(train: {
 				points.splice(points.length - cutIn);
 				colors.splice(colors.length - cutIn);
 				const joinPts = decodePolyline(join.points);
-				if (!forward) joinPts.reverse();
-				const joinColor = colors[colors.length - 1] ?? legColors[0];
+				const joinColors = stretchColors(joinPts.length, join.colors);
+				if (!forward) {
+					joinPts.reverse();
+					joinColors.reverse();
+				}
 				points.pop(); // the join starts on it
-				append(
-					joinPts,
-					joinPts.slice(1).map(() => joinColor),
-				);
+				append(joinPts, joinColors);
 				legPts = legPts.slice(cutOut);
 				legColors = legColors.slice(cutOut);
 			}
